@@ -2,15 +2,24 @@ import os
 import re
 import time
 import json
-import copy
 import datetime
-
+import traceback
 from bson.son import SON
 import pymongo.errors
 import name_tools
-
-from billy.core import db, settings
-from billy.importers.names import attempt_committee_match
+import logging
+_log = logging.getLogger('billy')
+from billy import db
+from billy.conf import settings
+import sys
+import traceback  
+if settings.ENABLE_OYSTER:
+    oyster_import_exception = None
+    try:
+        from oyster.core import kernel
+    except ImportError as e:
+        kernel = None               # noqa
+        oyster_import_exception = e
 
 
 def _get_property_dict(schema):
@@ -20,14 +29,21 @@ def _get_property_dict(schema):
         pdict[k] = {}
         if 'items' in v and 'properties' in v['items']:
             pdict[k] = _get_property_dict(v['items'])
-    pdict[settings.LEVEL_FIELD] = {}
     return pdict
+
+
+# fixing bill ids
+_bill_id_re = re.compile(r'([A-Z]*)\s*0*([-\d]+)')
+
+
+def fix_bill_id(bill_id):
+    bill_id = bill_id.replace('.', '')
+    return _bill_id_re.sub(r'\1 \2', bill_id).strip()
 
 
 # load standard fields from schema files
 standard_fields = {}
-for _type in ('bill', 'person', 'committee', 'metadata', 'vote',
-              'event', 'speech'):
+for _type in ('bill', 'person', 'committee', 'metadata', 'vote', 'event'):
     fname = os.path.join(os.path.split(__file__)[0],
                          '../schemas/%s.json' % _type)
     schema = json.load(open(fname))
@@ -68,7 +84,7 @@ def insert_with_id(obj):
     cursor = collection.find({'_id': id_reg}).sort('_id', -1).limit(1)
 
     try:
-        new_id = int(cursor.next()['_id'][len(abbr) + 1:]) + 1
+        new_id = int(cursor.next()['_id'][3:]) + 1
     except StopIteration:
         new_id = 1
 
@@ -99,7 +115,6 @@ def _timestamp_to_dt(timestamp):
 def compare_committee(ctty1, ctty2):
     def _cleanup(obj):
         ctty_junk_words = [
-            "(\s+|^)standing(\s+|$)",
             "(\s+|^)committee(\s+|$)",
             "(\s+|^)on(\s+|$)",
             "(\s+|^)joint(\s+|$)",
@@ -143,6 +158,10 @@ def update(old, new, collection, sneaky_update_filter=None):
             format is a dict mapping field names to a comparison function
             that returns True iff there is a change
     """
+    # To prevent deleting standalone votes..
+    if 'votes' in new and not new['votes']:
+        del new['votes']
+
     # need_save = something has changed
     need_save = False
 
@@ -173,8 +192,6 @@ def update(old, new, collection, sneaky_update_filter=None):
         old['updated_at'] = datetime.datetime.utcnow()
         collection.save(old, safe=True)
 
-    return need_save
-
 
 def convert_timestamps(obj):
     """
@@ -189,9 +206,18 @@ def convert_timestamps(obj):
             except TypeError:
                 raise TypeError("expected float for %s, got %s" % (key, value))
 
-    for key in ('sources', 'actions', 'votes', 'roles'):
+    for key in ('sources', 'actions', 'votes'):
         for child in obj.get(key, []):
             convert_timestamps(child)
+
+    for term in obj.get('terms', []):
+        convert_timestamps(term)
+
+    for details in obj.get('session_details', {}).values():
+        convert_timestamps(details)
+
+    for role in obj.get('roles', []):
+        convert_timestamps(role)
 
     return obj
 
@@ -255,13 +281,24 @@ def prepare_obj(obj):
 
 
 def next_big_id(abbr, letter, collection):
+    _log.debug("next_big_id")
+
     query = SON([('_id', abbr)])
     update = SON([('$inc', SON([('seq', 1)]))])
-    seq = db.command(SON([('findandmodify', collection),
+
+    seq = -1
+    try :
+        seq = db.command(SON([('findandmodify', collection),
                           ('query', query),
                           ('update', update),
                           ('new', True),
                           ('upsert', True)]))['value']['seq']
+    except Exception as e :
+        traceback.print_exc(file=sys.stderr)
+        traceback.print_exc() 
+        _log.error("ERROR")
+        _log.debug(e)
+
     return "%s%s%08d" % (abbr.upper(), letter, seq)
 
 
@@ -271,15 +308,14 @@ def merge_legislators(leg1, leg2):
     if leg1['_id'] > leg2['_id']:
         leg1, leg2 = leg2, leg1
 
-    # use deep copy for roles
-    leg1 = copy.deepcopy(leg1)
-    leg2 = copy.deepcopy(leg2)
+    leg1 = leg1.copy()
+    leg2 = leg2.copy()
 
     roles = 'roles'
     old_roles = 'old_roles'
 
-    no_compare = {'_id', 'leg_id', '_all_ids', '_locked_fields', 'created_at',
-                  'updated_at', roles, old_roles}
+    no_compare = set(('_id', 'leg_id', '_all_ids', '_locked_fields',
+        'created_at', 'updated_at', roles, old_roles))
 
     leg1['_all_ids'] += leg2['_all_ids']
 
@@ -314,7 +350,7 @@ def merge_legislators(leg1, leg2):
         #      old_roles & roles!! There's a potenital for data loss, but it's
         #      not that big of a thing.
         #   -- paultag & jamesturk, 02-02-2012
-        if len(leg1[roles]) > 0 and leg2[roles][0] != leg1[roles][0]:
+        if len(leg1[roles]) > 0:
             crole = leg1[roles][0]
             try:
                 leg1[old_roles][crole['term']].append(crole)
@@ -329,25 +365,12 @@ def merge_legislators(leg1, leg2):
             # OK. We've migrated the newly old roles to the old_roles entry.
             leg1[roles] = [leg2[roles][0]]
 
-    # copy over old_roles from other terms
-    for term in leg2.get('old_roles', {}):
-        if term not in leg1['old_roles']:
-            leg1['old_roles'][term] = leg2['old_roles'][term]
-
     return (leg1, leg2['_id'])
 
 __committee_ids = {}
 
 
 def get_committee_id(abbr, chamber, committee):
-
-    manual = attempt_committee_match(abbr,
-                                     chamber,
-                                     committee)
-
-    if manual:
-        return manual
-
     key = (abbr, chamber, committee)
     if key in __committee_ids:
         return __committee_ids[key]
@@ -395,3 +418,10 @@ def get_committee_id_alt(abbr, name, chamber):
         matched_committee = get_committee_id_alt(abbr, name, None)
 
     return matched_committee
+
+
+def oysterize(url, doc_class, id, **kwargs):
+    if not kernel:
+        raise oyster_import_exception
+    # kwargs pass through as metadata
+    kernel.track_url(url, doc_class, id=id, **kwargs)
