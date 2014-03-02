@@ -28,7 +28,7 @@ def _test_logic(name):
     assert _check_results(produced, compare)
 
 
-##########
+#
 # Cut below the line
 
 

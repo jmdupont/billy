@@ -13,6 +13,7 @@ class CommitteeScraper(Scraper):
 
 
 class Committee(SourcedObject):
+
     def __init__(self, chamber, committee, subcommittee=None,
                  **kwargs):
         """

@@ -82,7 +82,7 @@ def browse_index(request, template='billy/index.html'):
                                                 'bills.sponsors_with_id',
                                                 'bills.duplicate_versions',
                                                 'bills.have_subjects',
-                                               )):
+                                                )):
         report['id'] = report['_id']
         meta = db.metadata.find_one({'_id': report['_id']})
         report['name'] = meta['name']
@@ -105,13 +105,13 @@ def overview(request, abbr):
     context['metadata'] = meta
     context['report'] = report
     context['sessions'] = db.bills.find({settings.LEVEL_FIELD: abbr}
-                                       ).distinct('session')
+                                        ).distinct('session')
 
     def _add_time_delta(runlog):
         time_delta = runlog['scraped']['ended'] - runlog['scraped']['started']
         runlog['scraped']['time_delta'] = datetime.timedelta(time_delta.days,
                                                              time_delta.seconds
-                                                            )
+                                                             )
     try:
         runlog = db.billy_runs.find({"abbr": abbr}).sort(
             "scraped.started", direction=pymongo.DESCENDING)[0]
@@ -119,8 +119,11 @@ def overview(request, abbr):
         context['runlog'] = runlog
 
         if runlog.get('failure'):
-            last_success = db.billy_runs.find({"abbr": abbr, "failure": None}
-                     ).sort("scraped.started", direction=pymongo.DESCENDING)[0]
+            last_success = db.billy_runs.find(
+                {"abbr": abbr, "failure": None}
+            ).sort(
+                "scraped.started",
+                direction=pymongo.DESCENDING)[0]
             _add_time_delta(last_success)
             context['last_success'] = last_success
     except IndexError:
@@ -212,7 +215,7 @@ def run_detail_graph_data(request, abbr):
                             "title": "Last %s runs" % (history_count),
                             "type": "stacked",
                             "spec": {}
-                           },
+                            },
         #"default": {"run": _do_digest,
         #    "title": "Last %s runs" % (history_count),
         #    "type": "lines",
@@ -236,7 +239,7 @@ def run_detail_graph_data(request, abbr):
                        "title": "Digest of what exceptions have been thrown",
                        "type": "pies",
                        "spec": {"failure": {"$exists": True}}
-                      },
+                       },
     }
 
     for line in speck:
@@ -249,7 +252,7 @@ def run_detail_graph_data(request, abbr):
 
     return HttpResponse(
         json.dumps(data, cls=JSONEncoderPlus),
-        #content_type="text/json"
+        # content_type="text/json"
         content_type="text/plain")
 
 
@@ -271,7 +274,8 @@ def run_detail(request, obj=None):
 def run_detail_list(request, abbr):
     try:
         allruns = db.billy_runs.find({"abbr": abbr}
-                ).sort("scraped.started", direction=pymongo.DESCENDING)[:25]
+                                     ).sort("scraped.started",
+                                            direction=pymongo.DESCENDING)[:25]
         runlog = allruns[0]
     except IndexError as e:
         return render(request, 'billy/run_detail.html', {

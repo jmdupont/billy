@@ -1,46 +1,46 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from billy.utils import configure_logging, term_for_session
-configure_logging("startup") # we need this before the command line args are read in
+# we need this before the command line args are read in
+configure_logging("startup")
 import logging
 _log = logging.getLogger('billy')
 
-import bson.binary
-from bson.binary import ALL_UUID_SUBTYPES
-from bson.binary import OLD_UUID_SUBTYPE
+#import bson.binary
+#from bson.binary import ALL_UUID_SUBTYPES
+#from bson.binary import OLD_UUID_SUBTYPE
 
 import os
 import sys
-import pdb
 import json
 import glob
 import logging
 import inspect
 import argparse
 import traceback
-import importlib
+#import importlib
 import unicodecsv
-import traceback, os.path
+import os.path
 import datetime as dt
 import pdb
 
 # code snippet, to be included in 'sitecustomize.py'
-import sys
+from billy.scrape.validator import DatetimeValidator
+#from pymongo.errors import OperationFailure
+import pymongo
 
-from pymongo.errors import OperationFailure 
 
 def info(type, value, tb):
-    print "except hook"
+    print ("except hook")
     if hasattr(sys, 'ps1') or not sys.stderr.isatty():
         # we are in interactive mode or we don't have a tty-like
         # device, so we call the default hook
         sys.__excepthook__(type, value, tb)
     else:
-        
+
         # we are NOT in interactive mode, print the exception...
         traceback.print_exception(type, value, tb)
-        print
-# ...then start the debugger in post-mortem mode.
+        # ...then start the debugger in post-mortem mode.
         pdb.pm()
 
 sys.excepthook = info
@@ -52,12 +52,15 @@ from billy.scrape.utils import NoXpath
 
 from billy import db
 from billy.conf import settings, base_arg_parser
-from billy.scrape import (ScrapeError, JSONDateEncoder, get_scraper,
-                          check_sessions)
-from billy.utils import configure_logging, term_for_session
-from billy.scrape.validator import DatetimeValidator
+from billy.scrape import (
+    ScrapeError,
+    JSONDateEncoder,
+    get_scraper,
+    check_sessions)
+
 
 _log = logging.getLogger('billy')
+
 
 def _clear_scraped_data(output_dir, scraper_type=''):
     # make or clear directory for this type
@@ -77,8 +80,10 @@ def _get_configured_scraper(scraper_type, options, metadata):
         ScraperClass = get_scraper(options.module, scraper_type)
     except ScrapeError as e:
         # silence error only when alldata is present
-        if ('alldata' in options.types and
-            str(e.orig_exception) == 'No module named %s' % scraper_type):
+        if (
+                'alldata' in options.types and
+                str(e.orig_exception) == 'No module named %s' % scraper_type
+        ):
             return None
         else:
             raise e
@@ -128,7 +133,6 @@ def _run_scraper(scraper_type, options, metadata):
     #
     if (not(options.billid is False)):
         scraper.set_filter_bill_id(options.billid)
-
 
     # run scraper against year/session/term
     for time in times:
@@ -185,28 +189,33 @@ def _do_imports(abbrev, args):
             dist['_id'] = '%(abbr)s-%(chamber)s-%(name)s' % dist
             dist['boundary_id'] = dist['boundary_id'] % dist
             dist['num_seats'] = int(dist['num_seats'])
-            _log.debug(dist)                            
+            _log.debug(dist)
             db.districts.save(dist, safe=True)
     else:
         _log.warning("%s not found, continuing without "
-                                           "districts" % dist_filename)
+                     "districts" % dist_filename)
 
     report = {}
 
     if 'legislators' in args.types:
-        report['legislators'] = \
-                import_legislators(abbrev, settings.BILLY_DATA_DIR)
+        report['legislators'] = import_legislators(
+            abbrev,
+            settings.BILLY_DATA_DIR
+        )
 
     if 'bills' in args.types:
         report['bills'] = import_bills(abbrev, settings.BILLY_DATA_DIR)
 
     if 'committees' in args.types:
-        report['committees'] = \
-                import_committees(abbrev, settings.BILLY_DATA_DIR)
+        report['committees'] = import_committees(
+            abbrev,
+            settings.BILLY_DATA_DIR
+        )
 
     if 'events' in args.types:
-        report['events'] = \
-                import_events(abbrev, settings.BILLY_DATA_DIR)
+        report['events'] = import_events(
+            abbrev,
+            settings.BILLY_DATA_DIR)
 
     return report
 
@@ -228,21 +237,23 @@ def _do_reports(abbrev, args):
     if 'committees' in args.types:
         report['committees'] = committee_report(abbrev)
 
-    _log.debug(report)                            
+    _log.debug(report)
     db.reports.save(report, safe=True)
 
 
 def main(old_scrape_compat=False):
     try:
         parser = argparse.ArgumentParser(
-          description='update billy data',
-          parents=[base_arg_parser],
+            description='update billy data',
+            parents=[base_arg_parser],
         )
 
-        what = parser.add_argument_group('what to scrape',
-                                 'flags that help select what data to scrape')
-        scrape = parser.add_argument_group('scraper config',
-                                 'settings for the scraper')
+        what = parser.add_argument_group(
+            'what to scrape',
+            'flags that help select what data to scrape')
+        scrape = parser.add_argument_group(
+            'scraper config',
+            'settings for the scraper')
 
         parser.add_argument('module', type=str, help='scraper module (eg. nc)')
         parser.add_argument('--pdb', action='store_true', default=False,
@@ -252,26 +263,31 @@ def main(old_scrape_compat=False):
         parser.add_argument('--pudb', action='store_true', default=False,
                             help='invoke PUDB when exception is raised')
         what.add_argument('-s', '--session', action='append',
-                            dest='sessions', default=[],
+                          dest='sessions', default=[],
                           help='session(s) to scrape')
         what.add_argument('-t', '--term', action='append', dest='terms',
-                            help='term(s) to scrape', default=[])
+                          help='term(s) to scrape', default=[])
 
         for arg in ('upper', 'lower'):
             what.add_argument('--' + arg, action='append_const',
                               dest='chambers', const=arg)
 
-
-        for arg in ('bills', 'legislators', 'committees', 'votes', 'events'):
-            what.add_argument('--' + arg, action='append_const', dest='types',
-                              const=arg)
+        for arg in (
+                'bills',
+                'legislators',
+                'committees',
+                'votes',
+                'events'):
+            what.add_argument(
+                '--' + arg,
+                action='append_const',
+                dest='types',
+                const=arg)
 
         for arg in ('scrape', 'import', 'report'):
             parser.add_argument('--' + arg, dest='actions',
                                 action="append_const", const=arg,
                                 help='only run %s step' % arg)
-
-
         # special modes for debugging
         scrape.add_argument('--nonstrict', action='store_false', dest='strict',
                             default=True, help="don't fail immediately when"
@@ -280,10 +296,8 @@ def main(old_scrape_compat=False):
         scrape.add_argument('--fastmode', help="scrape in fast mode",
                             action="store_true", default=False)
 
-
         scrape.add_argument('--billid', help="scrape only a single bill",
                             action="store", default=False)
-
 
         # scrapelib overrides
         scrape.add_argument('-r', '--rpm', action='store', type=int,
@@ -339,8 +353,8 @@ def main(old_scrape_compat=False):
         # configure oyster
         if settings.ENABLE_OYSTER:
             from oyster.conf import settings as oyster_settings
-            oyster_settings.DOCUMENT_CLASSES[args.module + ':billtext'] = \
-                    module.document_class
+            oyster_settings.DOCUMENT_CLASSES[
+                args.module + ':billtext'] = module.document_class
 
         # make output dir
         args.output_dir = os.path.join(settings.BILLY_DATA_DIR, abbrev)
@@ -392,7 +406,7 @@ def main(old_scrape_compat=False):
         _log.info(plan)
         scrape_data = {}
 
-        if args.billid is False :
+        if args.billid is False:
             _log.debug("No billid filter.")
         else:
             _log.debug("Search for billid: %s" % args.billid)
@@ -407,17 +421,16 @@ def main(old_scrape_compat=False):
                 session_list = []
 
             _log.debug("Session List %s" % session_list)
-            try :
+            try:
                 check_sessions(metadata, session_list)
-            except :
+            except:
                 _log.debug("check_sessions failed")
 
-
             try:
-                schema_path = os.path.join(os.path.split(__file__)[0],
-                                           '../schemas/metadata.json')
+                schema_path = os.path.join(
+                    os.path.split(__file__)[0],
+                    '../schemas/metadata.json')
                 schema = json.load(open(schema_path))
-
                 validator = DatetimeValidator()
                 validator.validate(metadata, schema)
             except ValueError as e:
@@ -442,23 +455,28 @@ def main(old_scrape_compat=False):
             exec_start = dt.datetime.utcnow()
 
             # scraper order matters
-            if args.billid is False :
-                order = ('legislators', 'committees', 'votes', 'bills', 'events')
+            if args.billid is False:
+                order = (
+                    'legislators',
+                    'committees',
+                    'votes',
+                    'bills',
+                    'events')
             else:
                 _log.debug("going to process bills")
-                order = ('bills',) # only process the bills
+                order = ('bills',)  # only process the bills
 
             _traceback = None
             try:
                 for stype in order:
-                    _log.debug("consider to process %s" % stype )
+                    _log.debug("consider to process %s" % stype)
                     if stype in args.types:
-                        _log.debug("going to process %s" % stype )
-                        scraper_results= _run_scraper(stype, args, metadata)
+                        _log.debug("going to process %s" % stype)
+                        scraper_results = _run_scraper(stype, args, metadata)
 
                         run_record += scraper_results
                     else:
-                        _log.debug("skipping %s" % stype )
+                        _log.debug("skipping %s" % stype)
 
             except Exception as e:
                 _traceback = _, _, exc_traceback = sys.exc_info()
@@ -488,45 +506,28 @@ def main(old_scrape_compat=False):
                 if 'import' in args.actions:
                     try:
                         _log.debug("scrape_data:")
-#                        print scrape_data
-#  {'failure': True, 
-#   'state': 'ks', 
-# 'scraped': {'started': datetime.datetime(2012, 8, 17, 11, 46, 16, 437933), 'ended': datetime.datetime(2012, 8, 17, 11, 46, 17, 549820), 'state': 'ks', 'run_record': [{'start_time': datetime.datetime(2012, 8, 17, 11, 46, 16, 439525), 'type': 'legislators', 'end_time': datetime.datetime(2012, 8, 17, 11, 46, 17, 530071)},
-# {'exception': 
-#   {'message': 
-# HTTPError(u'500 while retrieving http://www.kslegislature.org/li/api/v5/rev-1/ctte/',), 
-# 'traceback': 'Traceback (most recent call last):\n  
-# File "update-billy.py", line 386, in main\n    run_record += _run_scraper(stype, args, metadata)\n  File "update-billy.py", line 119, in _run_scraper\n    scraper.scrape(chamber, time)\n  File "/home/mdupont/experiments/sunlight/openstates/openstates/ks/committees.py", line 21, in scrape\n    self.scrape_current(chamber, term)\n  File "/home/mdupont/experiments/sunlight/openstates/openstates/ks/committees.py", line 29, in scrape_current\n    with self.urlopen(ksapi.url + \'ctte/\') as committee_request:\n  File "/home/mdupont/experiments/sunlight/openstates/scrapelib/__init__.py", line 472, in urlopen\n    raise HTTPError(resp)\nHTTPError: 500 while retrieving http://www.kslegislature.org/li/api/v5/rev-1/ctte/\n', 'type': 'HTTPError'}, 'type': 'committees'}], 'args': ['update-billy.py', 'ks']}}
-
-                        if scrape_data['failure'] == True :
+                        if scrape_data['failure']:
                             _log.debug("Failed")
                             _log.debug(scrape_data)
                         else:
                             _log.debug("OK")
-                            _log.debug(scrape_data)                            
+                            _log.debug(scrape_data)
                             db.billy_runs.save(scrape_data, safe=True)
 
                     except KeyError as e:
                         _log.debug("Caught exception1 :")
                         _log.debug(e)
-                        exit (123)
+                        exit(123)
 
-                    except pymongo.errors.OperationFailure as e :
+                    except pymongo.errors.OperationFailure as e:
                         _log.debug("Caught exception3 :")
                         _log.debug(e)
-                        exit (123)
+                        exit(123)
 
                     except Exception as e:
                         _log.debug("Caught exception :")
                         _log.debug(e)
-                        exit (123)
-#                        exc_type, exc_obj, exc_tb = sys.exc_info()
-#                        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]     
-#                        print (exc_type, fname, exc_tb.tb_lineno)
-#
-#                        top = traceback.extract_stack()[-1]
-#                        print ", ".join([type(e).__name__, os.path.basename(top[0]), str(top[1])])
-#                        _log.debug("Caught exception %s" % e)
+                        exit(123)
                         raise lex, None, exc_traceback
                         # XXX: This should *NEVER* happen, but it has
                         # in the past, so we're going to catch any errors
@@ -545,7 +546,7 @@ def main(old_scrape_compat=False):
             scrape_data['imported'] = import_report
             # We're tying the run-logging into the import stage - since import
             # already writes to the DB, we might as well throw this in too.
-            _log.debug(scrape_data)                            
+            _log.debug(scrape_data)
             db.billy_runs.save(scrape_data, safe=True)
 
         # reports
@@ -553,7 +554,7 @@ def main(old_scrape_compat=False):
             _do_reports(abbrev, args)
 
     except ScrapeError as e:
-        _log.debug( "in update.py Scrape error")
+        _log.debug("in update.py Scrape error")
         _log.debug("Scrape error :%s" % e)
         _log.critical('Error: %s' % e)
         sys.exit(1)
@@ -563,27 +564,28 @@ def main(old_scrape_compat=False):
         _log.critical('TypeError:', e)
         sys.exit(1)
 
-    except NoData as e :
-        _log.debug( "No Data")
-        _log.debug( e)
+    except NoData as e:
+        _log.debug("No Data")
+        _log.debug(e)
         _log.critical('No Data:')
         sys.exit(1)
 
-    except NoDoc as e :
+    except NoDoc as e:
         _log.debug("No Doc")
         _log.critical('No Doc:', e)
         sys.exit(1)
 
-    except NoXpath as e :
-        _log.debug( "No XPath")
+    except NoXpath as e:
+        _log.debug("No XPath")
         _log.critical('No XPath:', e)
         sys.exit(1)
 
     except Exception as e:
-        _log.debug( "Unknown error3")
-        _log.debug( e)
+        _log.debug("Unknown error3")
+        _log.debug(e)
         _log.critical('Unknown Error')
         sys.exit(1)
+
 
 def scrape_compat_main():
     main(True)

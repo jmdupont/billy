@@ -69,7 +69,7 @@ def region(request, abbr):
 
         # committees
         res['committees_count'] = meta.committees({'chamber': chamber_type}
-                                                 ).count()
+                                                  ).count()
 
         res['latest_bills'] = meta.bills({'chamber': chamber_type}).sort(
             [('action_dates.first', -1)]).limit(2)

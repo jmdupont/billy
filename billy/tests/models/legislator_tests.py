@@ -118,10 +118,10 @@ def test_legislator_rolesmanager_mutation():
 #     '''
 #     fields = ['committee']
 
-#     # Get the metadata's committees manually.
+# Get the metadata's committees manually.
 #     rv1 = list(db.committees.find({'state': 'ex'}, fields=fields))
 
-#     # Now through the model method.
+# Now through the model method.
 #     meta2 = db.metadata.find_one('ex')
 #     rv2 = list(meta2.committees(fields=fields))
 
@@ -134,22 +134,22 @@ def test_legislator_rolesmanager_mutation():
 #     '''
 #     spec = dict(committee=u'Standing Committee on Fakeness')
 
-#     # Get the metadata's committees manually.
+# Get the metadata's committees manually.
 #     rv1 = list(db.committees.find(dict({'state': 'ex'}, **spec)))
 
-#     # Now through the model method.
+# Now through the model method.
 #     meta2 = db.metadata.find_one('ex')
 #     rv2 = list(meta2.committees(spec))
 
 #     eq_(rv1, rv2)
 
 
-# # Terms
+# Terms
 # @with_setup(setup_func)
 # def test_metadata_terms_session_names():
 #     '''Does Metadata.committees add the extra spec to the mongo query?
 #     '''
-#     # Get term session names manually.
+# Get term session names manually.
 #     meta1 = db.metadata.find_one('ex')
 #     for term1 in meta1['terms']:
 #         if term1['name'] == '20112012':
@@ -158,23 +158,23 @@ def test_legislator_rolesmanager_mutation():
 #     for sess in term1['sessions']:
 #         names1.append(meta1['session_details'][sess]['display_name'])
 
-#     # Now through the model method.
+# Now through the model method.
 #     meta2 = db.metadata.find_one('ex')
 #     names2 = list(meta2.terms_manager[0].session_names())
 
 #     eq_(names1, names2)
 
 
-# # Bills.
+# Bills.
 # @with_setup(setup_func)
 # def test_metadata_bills():
 #     '''Does Metadata.bills return the correct set of bills?
 #     '''
 
-#     # Get the metadata's bills manually.
+# Get the metadata's bills manually.
 #     rv1 = list(db.bills.find({'state': 'ex'}))
 
-#     # Now through the model method.
+# Now through the model method.
 #     meta2 = db.metadata.find_one('ex')
 #     rv2 = list(meta2.bills())
 
@@ -187,10 +187,10 @@ def test_legislator_rolesmanager_mutation():
 #     '''
 #     fields = ['title']
 
-#     # Get the metadata's bills manually.
+# Get the metadata's bills manually.
 #     rv1 = list(db.bills.find({'state': 'ex'}, fields=fields))
 
-#     # Now through the model method.
+# Now through the model method.
 #     meta2 = db.metadata.find_one('ex')
 #     rv2 = list(meta2.bills(fields=fields))
 
@@ -203,10 +203,10 @@ def test_legislator_rolesmanager_mutation():
 #     '''
 #     spec = dict(title=u'A fake act.')
 
-#     # Get the metadata's bills manually.
+# Get the metadata's bills manually.
 #     rv1 = list(db.bills.find(dict({'state': 'ex'}, **spec)))
 
-#     # Now through the model method.
+# Now through the model method.
 #     meta2 = db.metadata.find_one('ex')
 #     rv2 = list(meta2.bills(spec))
 

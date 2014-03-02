@@ -76,7 +76,8 @@ def s3_get(abbr, doc):
                     content_type = 'text/html'
                 elif url.endswith('pdf'):
                     content_type = 'application/pdf'
-            headers = {'x-amz-acl': 'public-read', 'Content-Type': content_type}
+            headers = {'x-amz-acl': 'public-read',
+                       'Content-Type': content_type}
             k.set_contents_from_string(response.content, headers=headers)
             _log.debug('pushed %s to s3 as %s', doc['url'], doc['doc_id'])
             return response.content

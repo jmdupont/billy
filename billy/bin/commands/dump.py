@@ -65,6 +65,7 @@ def upload(abbr, filename, type, s3_prefix='downloads/', use_cname=True):
 
 
 class APIValidator(validictory.SchemaValidator):
+
     def validate_type_datetime(self, val):
         if not isinstance(val, basestring):
             return False
@@ -196,9 +197,10 @@ class DumpCSV(BaseCommand):
     def add_args(self):
         self.add_argument('abbrs', metavar='ABBR', type=str, nargs='+',
                           help='the abbreviation for the data to export')
-        self.add_argument('--file', '-f',
-                          help='filename to output to (defaults to <abbr>.zip)'
-                         )
+        self.add_argument(
+            '--file', '-f',
+            help='filename to output to (defaults to <abbr>.zip)'
+        )
         self.add_argument('--upload', '-u', action='store_true', default=False,
                           help='upload the created archives to S3')
 
@@ -229,17 +231,29 @@ class DumpJSON(BaseCommand):
     def add_args(self):
         self.add_argument('abbrs', metavar='ABBR', type=str, nargs='+',
                           help='the abbreviation for the data to export')
-        self.add_argument('--file', '-f',
-                          help='filename to output to (defaults to <abbr>.zip)'
-                         )
-        self.add_argument('--upload', '-u', action='store_true', default=False,
-                          help='upload the created archives to S3')
-        self.add_argument('--apikey', dest='API_KEY',
-                          help='the API key to use')
-        self.add_argument('--schema_dir', default=None,
-                          help='directory to use for API schemas (optional)')
-        self.add_argument('--novalidate', action='store_true', default=False,
-                          help="don't run validation")
+        self.add_argument(
+            '--file', '-f',
+            help='filename to output to (defaults to <abbr>.zip)'
+        )
+        self.add_argument(
+            '--upload',
+            '-u',
+            action='store_true',
+            default=False,
+            help='upload the created archives to S3')
+        self.add_argument(
+            '--apikey',
+            dest='API_KEY',
+            help='the API key to use')
+        self.add_argument(
+            '--schema_dir',
+            default=None,
+            help='directory to use for API schemas (optional)')
+        self.add_argument(
+            '--novalidate',
+            action='store_true',
+            default=False,
+            help="don't run validation")
 
     def handle(self, args):
         for abbr in args.abbrs:

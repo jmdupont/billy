@@ -128,10 +128,11 @@ def get_district(request, district_id):
     return HttpResponse(f)
 
 
-### Votes & News don't really fit here or anywhere
+# Votes & News don't really fit here or anywhere
 
 
 class VotesList(RelatedObjectsList):
+
     '''
     Context (see utils.ListViewBase an utils.RelatedObjectsList):
         - column_headers
@@ -181,6 +182,7 @@ class VotesList(RelatedObjectsList):
 
 
 class NewsList(RelatedObjectsList):
+
     '''
     Context (see utils.ListViewBase an utils.RelatedObjectsList):
         - column_headers

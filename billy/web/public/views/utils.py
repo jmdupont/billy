@@ -22,6 +22,7 @@ def normalize_whitespace(s):
 
 
 class ListViewBase(TemplateView):
+
     '''Base class for VoteList, FeedList, etc.
 
     I tried using generic views for bill lists to cut down the
@@ -99,6 +100,7 @@ class ListViewBase(TemplateView):
 
 
 class RelatedObjectsList(ListViewBase):
+
     '''A generic list view where there's a main object, like a
     legislator or metadata, and we want to display all of the main
     object's "sponsored_bills" or "introduced_bills." This class

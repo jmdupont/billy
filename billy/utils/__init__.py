@@ -53,10 +53,12 @@ def parse_param_dt(dt):
 
 
 class JSONEncoderPlus(json.JSONEncoder):
+
     """
     JSONEncoder that encodes datetime objects as Unix timestamps and mongo
     ObjectIds as strings.
     """
+
     def default(self, obj, **kwargs):
         if isinstance(obj, datetime.datetime):
             return time.mktime(obj.utctimetuple())
@@ -158,6 +160,7 @@ def cd(path):
 
 
 class CachedAttr(object):
+
     '''Computes attribute value and caches it in instance.
 
     Example:
@@ -167,7 +170,8 @@ class CachedAttr(object):
             myMethod = CachedAttribute(myMethod)
     Use "del inst.myMethod" to clear cache.
 
-    Source: http://code.activestate.com/recipes/276643-caching-and-aliasing-with-descriptors/'''
+    Source: http://code.activestate.com/'
+    'recipes/276643-caching-and-aliasing-with-descriptors/'''
 
     def __init__(self, method, name=None):
         self.method = method

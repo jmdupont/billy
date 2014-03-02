@@ -10,6 +10,7 @@ from billy.core import db
 
 
 class BaseTestCase(unittest.TestCase):
+
     '''The idea with this base class is that each
     endpoint is represented by a test. Each test has
     a url tempalte, url args used to format the url

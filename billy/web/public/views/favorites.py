@@ -3,7 +3,7 @@ import collections
 from itertools import groupby
 from operator import itemgetter
 from urlparse import parse_qs
-from StringIO import StringIO
+#from StringIO import StringIO
 
 import unicodecsv
 
@@ -19,6 +19,7 @@ from .utils import templatename
 
 
 class Favorites(dict):
+
     '''This class wraps the favorites dict and provides convenience
     methods.
     '''
@@ -159,7 +160,7 @@ def is_favorite(obj_id, obj_type, user, extra_spec=None):
     return False
 
 
-########## views ##########
+# views ##########
 
 
 @login_required
@@ -251,11 +252,13 @@ def favorite_bills_csv(request):
 
     # Create a csv resposne.
     response = HttpResponse(mimetype='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="favorite_bills.csv"'
+    response[
+        'Content-Disposition'] = 'attachment; filename="favorite_bills.csv"'
 
     # Start a CSV writer.
     fields = (settings.LEVEL_FIELD.title(), 'Bill Id', 'Sponsor', 'Title',
-             'Session', 'Recent Action Date', 'Recent Action', 'Other Sponsors')
+              'Session', 'Recent Action Date', 'Recent Action',
+              'Other Sponsors')
     writer = unicodecsv.DictWriter(response, fields, encoding='utf-8')
     writer.writeheader()
 

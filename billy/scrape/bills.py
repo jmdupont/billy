@@ -23,6 +23,7 @@ class BillScraper(Scraper):
 
 
 class Bill(SourcedObject):
+
     """
     Object representing a piece of legislation.
 

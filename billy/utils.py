@@ -78,10 +78,21 @@ def extract_fields(d, fields, delimiter='|'):
 def configure_logging(module=None):
 
     if module:
-        format = ("BILLY:%(pathname)s %(asctime)s %(name)s %(levelname)s " + module + " %(funcName)s %(lineno)d %(message)s")
+        format = (
+            "BILLY:%(pathname)s %(asctime)s %(name)s %(levelname)s "
+            + module + " %(funcName)s %(lineno)d %(message)s")
     else:
-        format = "BILLY2:%(pathname)s  %(asctime)s %(name)s %(levelname)s %(funcName)s %(lineno)d %(message)s"
-    logging.basicConfig(level=logging.DEBUG, format=format, datefmt="%H:%M:%S")
+        format = (
+            'BILLY2:'
+            '%(pathname)s '
+            ' %(asctime)s %(name)s'
+            ' %(levelname)s'
+            ' %(funcName)s'
+            ' %(lineno)d'
+            ' %(message)s')
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format=format, datefmt="%H:%M:%S")
 
 
 def textual_diff(l1, l2):
