@@ -12,6 +12,7 @@ _distinct_subjects = {}
 _distinct_types = {}
 _distinct_action_types = {}
 
+
 class Term(DictManager):
     methods_only = True
 
@@ -46,6 +47,7 @@ class TermsManager(ListManager):
 
 
 class MetadataVotesManager(AttrManager):
+
     def __iter__(self):
         for bill in self.document.bills():
             for vote in bill.votes_manager:
@@ -58,7 +60,7 @@ class Metadata(Document):
     when it's an attribute of another object. For example, if you have a
     bill, you can do this:
 
-    >>> bill.metadata.abbr
+    >>> # bill.metadata.abbr
     'de'
     '''
     instance_key = settings.LEVEL_FIELD
@@ -160,12 +162,14 @@ class Metadata(Document):
 
     def distinct_bill_subjects(self):
         if self.abbr not in _distinct_subjects:
-            _distinct_subjects[self.abbr] = sorted(self.bills().distinct('subjects'))
+            _distinct_subjects[self.abbr] = sorted(
+                self.bills().distinct('subjects'))
         return _distinct_subjects[self.abbr]
 
     def distinct_action_types(self):
         if self.abbr not in _distinct_action_types:
-            _distinct_action_types[self.abbr] = sorted(self.bills().distinct('actions.type'))
+            _distinct_action_types[self.abbr] = sorted(
+                self.bills().distinct('actions.type'))
         return _distinct_action_types[self.abbr]
 
     def distinct_bill_types(self):

@@ -14,7 +14,7 @@ def mongoid_2_url(abbr, _id):
     return urlresolvers.reverse(viewname, args=[abbr, _id])
 
 
-## {{{ http://code.activestate.com/recipes/276643/ (r1)
+# {{{ http://code.activestate.com/recipes/276643/ (r1)
 class CachedAttribute(object):
     '''Computes attribute value and caches it in instance.
 
@@ -87,9 +87,9 @@ class AliasAttribute(ReadAliasAttribute):
 
     def __delete__(self, inst):
         delattr(inst, self.name)
-## end of http://code.activestate.com/recipes/276643/ }}}
+# end of http://code.activestate.com/recipes/276643/ }}}
 
-## {{{ http://code.activestate.com/recipes/576694/ (r7)
+# {{{ http://code.activestate.com/recipes/576694/ (r7)
 KEY, PREV, NEXT = range(3)
 
 
@@ -157,4 +157,4 @@ class OrderedSet(collections.MutableSet):
 if __name__ == '__main__':
     print(OrderedSet('abracadaba'))
     print(OrderedSet('simsalabim'))
-## end of http://code.activestate.com/recipes/576694/ }}}
+# end of http://code.activestate.com/recipes/576694/ }}}

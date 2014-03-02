@@ -7,17 +7,18 @@ from billy.reports.utils import update_common
 
 def scan_committees(abbr):
     duplicate_sources = defaultdict(int)
-    report = {'upper_count': 0,
-              'lower_count': 0,
-              'joint_count': 0,
-              'empty_count': 0,
-              '_updated_today_count': 0,
-              '_updated_this_month_count': 0,
-              '_updated_this_year_count': 0,
-              '_member_count': 0,
-              '_members_with_leg_id_count': 0,
-              'unmatched_leg_ids': set(),
-             }
+    report = {
+        'upper_count': 0,
+        'lower_count': 0,
+        'joint_count': 0,
+        'empty_count': 0,
+        '_updated_today_count': 0,
+        '_updated_this_month_count': 0,
+        '_updated_this_year_count': 0,
+        '_member_count': 0,
+        '_members_with_leg_id_count': 0,
+        'unmatched_leg_ids': set(),
+    }
 
     for com in db.committees.find({settings.LEVEL_FIELD: abbr}):
 

@@ -20,6 +20,7 @@ class LegislatorScraper(Scraper):
 
 
 class Person(SourcedObject):
+
     def __init__(self, full_name, first_name='', last_name='',
                  middle_name='', **kwargs):
         """
@@ -76,6 +77,7 @@ class Person(SourcedObject):
 
 
 class Legislator(Person):
+
     def __init__(self, term, chamber, district, full_name,
                  first_name='', last_name='', middle_name='',
                  party='', **kwargs):

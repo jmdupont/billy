@@ -7,11 +7,12 @@ long_description = open('README.rst').read()
 setup(name='billy',
       version=__version__,
       packages=find_packages(),
-      package_data={'billy': ['schemas/*.json',
-                              'schemas/api/*.json',
-                              'schemas/relax/api.rnc'],
-                    'billy.web.admin': ['templates/billy/*.html'],
-                   },
+      package_data={
+          'billy': ['schemas/*.json',
+                    'schemas/api/*.json',
+                    'schemas/relax/api.rnc'],
+          'billy.web.admin': ['templates/billy/*.html'],
+      },
       author="James Turk",
       author_email="jturk@sunlightfoundation.com",
       license="BSD",
@@ -36,5 +37,4 @@ billy-util = billy.bin.util:main
           "unicodecsv!=0.9.3",
           "validictory",
           "pyelasticsearch",
-      ]
-)
+      ])

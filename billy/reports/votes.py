@@ -9,16 +9,17 @@ logger = logging.getLogger('billy')
 
 
 def _vote_report_dict():
-    return {'vote_count': 0,
-            '_passed_vote_count': 0,
-            'votes_per_month': defaultdict(int),
-            'votes_per_chamber': defaultdict(int),
-            'votes_per_type': defaultdict(int),
-            'bad_vote_counts': set(),
-            '_rollcall_count': 0,
-            '_rollcalls_with_leg_id_count': 0,
-            'unmatched_voters': set()
-           }
+    return {
+        'vote_count': 0,
+        '_passed_vote_count': 0,
+        'votes_per_month': defaultdict(int),
+        'votes_per_chamber': defaultdict(int),
+        'votes_per_type': defaultdict(int),
+        'bad_vote_counts': set(),
+        '_rollcall_count': 0,
+        '_rollcalls_with_leg_id_count': 0,
+        'unmatched_voters': set()
+    }
 
 
 def scan_votes(abbr):

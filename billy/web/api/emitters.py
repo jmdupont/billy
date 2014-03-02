@@ -75,6 +75,7 @@ class _vDatetime(icalendar.vDatetime):
     which breaks some calendar clients. This is a fix to
     use VALUE=DATETIME.
     """
+
     def __init__(self, dt):
         self.dt = dt
         self.params = icalendar.Parameters(dict(value='DATETIME'))

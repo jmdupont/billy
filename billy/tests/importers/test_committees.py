@@ -30,7 +30,7 @@ def setup_func():
                   'subcommittee': 'Tractors'},
              ],
              'sources': [{'url': 'http://example.com/feynman'}],
-            }
+             }
     leg_b = {'full_name': 'Albert Einstein', 'leg_id': 'EXL000002',
              '_id': 'EXL000002',
              '_all_ids': ['EXL000002'],
@@ -50,7 +50,7 @@ def setup_func():
                   'type': 'committee member', 'committee': 'Appropriations'},
              ],
              'sources': [{'url': 'http://example.com/einstein'}],
-            }
+             }
     # in a different term
     leg_c = {'full_name': 'Werner Heisenberg', 'leg_id': 'EXL000003',
              '_id': 'EXL000003',
@@ -70,7 +70,7 @@ def setup_func():
                   'type': 'committee member', 'committee': 'Appropriations'},
              ],
              'sources': [{'url': 'http://example.com/einstein'}],
-            }
+             }
 
     db.legislators.insert(leg_a)
     db.legislators.insert(leg_b)
@@ -116,7 +116,7 @@ def test_import_committee():
                      {'name': 'Richard Feynman', 'role': 'Vice-Chair'},
                      {'name': 'A. Einstein', 'role': 'Chair'},
                  ]
-                }
+                 }
 
     committees.import_committee(committee, 'S1', 'T1')
 
@@ -136,4 +136,4 @@ def test_import_committee():
                                 'type': 'committee member',
                                 'committee': 'Reptilian Task Force',
                                 'position': 'Vice-Chair'
-                               }
+                                }

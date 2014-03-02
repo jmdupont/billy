@@ -116,6 +116,7 @@ def _metadata_backwards_shim(metadata):
 
 
 class AllMetadataHandler(BillyHandler):
+
     def read(self, request):
         use_shim = bool(request.GET.get('fields'))
         fields = _build_field_list(request, {'abbreviation': 1,
@@ -123,7 +124,7 @@ class AllMetadataHandler(BillyHandler):
                                              'feature_flags': 1,
                                              'chambers': 1,
                                              '_id': 0
-                                            })
+                                             })
         for f in fields.copy():
             if '_chamber_' in f:
                 use_shim = True
@@ -136,6 +137,7 @@ class AllMetadataHandler(BillyHandler):
 
 
 class MetadataHandler(BillyHandler):
+
     def read(self, request, abbr):
         use_shim = bool(request.GET.get('fields'))
         field_list = _build_field_list(request)
@@ -152,6 +154,7 @@ class MetadataHandler(BillyHandler):
 
 
 class BillHandler(BillyHandler):
+
     def read(self, request, abbr=None, session=None, bill_id=None,
              chamber=None, billy_bill_id=None):
         if billy_bill_id:
@@ -175,6 +178,7 @@ class BillHandler(BillyHandler):
 
 
 class BillSearchHandler(BillyHandler):
+
     def read(self, request):
         bill_fields = {'title': 1, 'created_at': 1, 'updated_at': 1,
                        'bill_id': 1, 'type': 1, settings.LEVEL_FIELD: 1,
@@ -264,19 +268,25 @@ class BillSearchHandler(BillyHandler):
 
 
 class LegislatorHandler(BillyHandler):
+
     def read(self, request, id):
-        return db.legislators.find_one({'_all_ids': id}, _build_field_list(request))
+        return db.legislators.find_one(
+            {'_all_ids': id},
+            _build_field_list(request))
 
 
 class LegislatorSearchHandler(BillyHandler):
+
     def read(self, request):
         legislator_fields = {'sources': 0, 'roles': 0, 'old_roles': 0}
         # replace with request's fields if they exist
         legislator_fields = _build_field_list(request, legislator_fields)
 
-        _filter = _build_mongo_filter(request, (settings.LEVEL_FIELD, 'first_name', 'last_name',
-                                                'full_name'))
-        elemMatch = _build_mongo_filter(request, ('chamber', 'term', 'district', 'party'))
+        _filter = _build_mongo_filter(
+            request, (settings.LEVEL_FIELD, 'first_name', 'last_name',
+                      'full_name'))
+        elemMatch = _build_mongo_filter(
+            request, ('chamber', 'term', 'district', 'party'))
         if elemMatch:
             _filter['roles'] = {'$elemMatch': elemMatch}
 
@@ -292,12 +302,14 @@ class LegislatorSearchHandler(BillyHandler):
 
 
 class CommitteeHandler(BillyHandler):
+
     def read(self, request, id):
         return db.committees.find_one({'_all_ids': id},
                                       _build_field_list(request))
 
 
 class CommitteeSearchHandler(BillyHandler):
+
     def read(self, request):
         committee_fields = {'members': 0, 'sources': 0}
         # replace with request's fields if they exist
@@ -310,6 +322,7 @@ class CommitteeSearchHandler(BillyHandler):
 
 
 class EventsHandler(BillyHandler):
+
     def read(self, request, id=None, events=[]):
         if events:
             return events
@@ -357,11 +370,13 @@ class EventsHandler(BillyHandler):
             return resp
 
         return list(db.events.find(spec, fields=_build_field_list(request)
-                                  ).sort('when', pymongo.ASCENDING).limit(1000)
-                   )
+                                   ).sort('when',
+                                          pymongo.ASCENDING).limit(1000)
+                    )
 
 
 class SubjectListHandler(BillyHandler):
+
     def read(self, request, abbr, session=None, chamber=None):
         abbr = abbr.lower()
         spec = {settings.LEVEL_FIELD: abbr}
@@ -406,7 +421,7 @@ class LegislatorGeoHandler(BillyHandler):
                 filters.append({'district': districts[0]['name'],
                                 'chamber': districts[0]['chamber'],
                                 settings.LEVEL_FIELD: districts[0]['abbr'],
-                               })
+                                })
                 boundary_mapping[(districts[0]['abbr'],
                                   districts[0]['name'],
                                   districts[0]['chamber'])] = boundary_id
@@ -496,7 +511,7 @@ class BoundaryHandler(BillyHandler):
         region = {'center_lon': (max_lon + min_lon) / 2,
                   'center_lat': (max_lat + min_lat) / 2,
                   'lon_delta': lon_delta, 'lat_delta': lat_delta,
-                 }
+                  }
         bbox = [[min_lat, min_lon], [max_lat, max_lon]]
 
         district = db.districts.find_one({'boundary_id': boundary_id})

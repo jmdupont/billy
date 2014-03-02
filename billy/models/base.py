@@ -27,11 +27,13 @@ class classproperty(property):
     '''Based on the python 2.2 release notes--
     http://www.python.org/download/releases/2.2/descrintro/#property
     '''
+
     def __get__(self, cls, instance):
         return self.fget.__get__(None, instance)()
 
 
 class ModelBase(type):
+
     def __new__(meta, classname, bases, classdict):
         cls = type.__new__(meta, classname, bases, classdict)
 
@@ -136,6 +138,7 @@ class Document(dict):
 
 
 class AttrManager(object):
+
     def __init__(self, *args, **kwargs):
         pass
 
@@ -188,6 +191,7 @@ class AttrManager(object):
 
 
 class ListManager(list, AttrManager):
+
     def __iter__(self):
         wrapper = self._wrapper
         for obj in self.document[self._keyname]:
@@ -209,6 +213,7 @@ class ListManager(list, AttrManager):
 
 
 class DictManager(dict, AttrManager):
+
     def items(self):
         return [(k, self._wrapper(v)) for (k, v) in dict.items(self)]
 
@@ -231,6 +236,7 @@ class RelatedDocument(object):
     You can pass additional find_one arguments and limit the returned
     field, for example.
     '''
+
     def __init__(self, model, instance_key=None):
         self.model = model
         self.instance_key = instance_key
@@ -296,6 +302,7 @@ class RelatedDocuments(object):
     the key `model_key`. For example, this could be used to get all
     "legislator" documents for a given "metadata".
     '''
+
     def __init__(self, model, model_keys, instance_key='_id',
                  sort=None, model_keys_operator='$or',
                  default_spec_instance_keys=None,

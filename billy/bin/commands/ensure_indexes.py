@@ -29,19 +29,25 @@ class MongoIndex(BaseCommand):
                  ('chamber', pymongo.ASCENDING)],
                 [(settings.LEVEL_FIELD, pymongo.ASCENDING),
                  ('committee', pymongo.ASCENDING),
-                 ('subcommittee', pymongo.ASCENDING)
-                ]
+                 ('subcommittee', pymongo.ASCENDING)]
             ],
             'events': [
-                [('when', pymongo.ASCENDING),
-                 (settings.LEVEL_FIELD, pymongo.ASCENDING),
-                 ('type', pymongo.ASCENDING)],
-                [('when', pymongo.DESCENDING),
-                 (settings.LEVEL_FIELD, pymongo.ASCENDING),
-                 ('type', pymongo.ASCENDING)],
-                [ (settings.LEVEL_FIELD, pymongo.ASCENDING),
-                 ('related_bills.bill_id', pymongo.ASCENDING),
-                 ('when', pymongo.DESCENDING) ],
+                [
+                    (
+                        'when', pymongo.ASCENDING),
+                    (settings.LEVEL_FIELD, pymongo.ASCENDING),
+                    ('type', pymongo.ASCENDING)
+                ],
+                [
+                    ('when', pymongo.DESCENDING),
+                    (settings.LEVEL_FIELD, pymongo.ASCENDING),
+                    ('type', pymongo.ASCENDING)
+                ],
+                [
+                    (settings.LEVEL_FIELD, pymongo.ASCENDING),
+                    ('related_bills.bill_id', pymongo.ASCENDING),
+                    ('when', pymongo.DESCENDING)
+                ],
             ],
             'legislators': [
                 [('_all_ids', pymongo.ASCENDING)],
@@ -54,16 +60,17 @@ class MongoIndex(BaseCommand):
                 # ('roles.term', pymongo.ASCENDING),
                 # ('roles.chamber', pymongo.ASCENDING),
                 # ('roles.district', pymongo.ASCENDING)],
-                {'role_and_name_parts': [
-                    ('roles.' + settings.LEVEL_FIELD, pymongo.ASCENDING),
-                    ('roles.type', pymongo.ASCENDING),
-                    ('roles.term', pymongo.ASCENDING),
-                    ('roles.chamber', pymongo.ASCENDING),
-                    ('_scraped_name', pymongo.ASCENDING),
-                    ('first_name', pymongo.ASCENDING),
-                    ('last_name', pymongo.ASCENDING),
-                    ('middle_name', pymongo.ASCENDING),
-                    ('suffixes', pymongo.ASCENDING)],
+                {
+                    'role_and_name_parts': [
+                        ('roles.' + settings.LEVEL_FIELD, pymongo.ASCENDING),
+                        ('roles.type', pymongo.ASCENDING),
+                        ('roles.term', pymongo.ASCENDING),
+                        ('roles.chamber', pymongo.ASCENDING),
+                        ('_scraped_name', pymongo.ASCENDING),
+                        ('first_name', pymongo.ASCENDING),
+                        ('last_name', pymongo.ASCENDING),
+                        ('middle_name', pymongo.ASCENDING),
+                        ('suffixes', pymongo.ASCENDING)],
                 },
             ],
             'bills': [
@@ -80,11 +87,11 @@ class MongoIndex(BaseCommand):
                 # primary sponsors index
                 [('sponsors.leg_id', pymongo.ASCENDING),
                  ('sponsors.type', pymongo.ASCENDING),
-                 (settings.LEVEL_FIELD, pymongo.ASCENDING)
-                ],
+                 (settings.LEVEL_FIELD, pymongo.ASCENDING)],
                 # for distinct queries
-                [(settings.LEVEL_FIELD, pymongo.ASCENDING),
-                 ('type', pymongo.ASCENDING),
+                [
+                    (settings.LEVEL_FIELD, pymongo.ASCENDING),
+                    ('type', pymongo.ASCENDING),
                 ],
             ],
             'subjects': [

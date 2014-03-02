@@ -53,7 +53,7 @@ class PlaintextColumns(object):
     """
 
     Usage:
-
+    >>> cols = """ Porter """
     >>> table = PlaintextColumns(cols)
 
     >>> table.rows().next()
