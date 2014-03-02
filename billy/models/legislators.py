@@ -49,6 +49,7 @@ class RolesManager(ListManager):
 
 
 class OldRole(dict):
+
     '''The `OldRolesManager` has been taken out behind the barn and
     shot on account of its confusingness. To replace it, this wrapper
     class defines a few helpful methods for templates to use, and

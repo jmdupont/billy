@@ -14,7 +14,8 @@ class CommitteesSearchTestCase(BaseTestCase):
     def test_correct_keys_present(self):
         expected_keys = set([
             u'level', u'country', u'updated_at', u'parent_id',
-            u'state', u'subcommittee', u'committee', u'chamber', u'id', 'all_ids'])
+            u'state', u'subcommittee', u'committee', u'chamber',
+            u'id', 'all_ids'])
         self.assertEquals(set(self.json[0]), expected_keys)
 
     def test_status(self):

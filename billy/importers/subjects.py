@@ -5,6 +5,7 @@ from billy.core import settings
 
 
 class SubjectCategorizer(object):
+
     def __init__(self, abbr):
         """ load categorization from subjects mongo table """
         self.abbr = abbr

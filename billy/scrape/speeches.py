@@ -15,6 +15,7 @@ class SpeechScraper(Scraper):
 
 
 class Speech(SourcedObject):
+
     def __init__(self, session, chamber, docid, when, sequence,
                  speaker, text, **kwargs):
         super(Speech, self).__init__('speech', **kwargs)

@@ -69,7 +69,7 @@ class RelatedBillsList(RelatedObjectsList):
             if chamber:
                 if metadata:
                     description.append(metadata['chambers'][chamber]['name']
-                                      )
+                                       )
                 else:
                     description.extend([chamber.title(), 'Chamber'])
             description.append((type or 'Bill') + 's')
@@ -203,6 +203,7 @@ class RelatedBillsList(RelatedObjectsList):
 
 
 class BillList(RelatedBillsList):
+
     '''
     Context:
         - Determined by RelatedBillsList.get_context_data
@@ -220,6 +221,7 @@ class BillList(RelatedBillsList):
 
 
 class AllBillList(RelatedBillsList):
+
     '''
     Context:
         - Determined by RelatedBillsList.get_context_data
@@ -238,6 +240,7 @@ class AllBillList(RelatedBillsList):
 
 
 class AllBillCSVList(AllBillList):
+
     '''
     Context:
         - Determined by RelatedBillsList.get_context_data
@@ -245,6 +248,7 @@ class AllBillCSVList(AllBillList):
     Teamplates:
        - None, creates a csv.
     '''
+
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(*args, **kwargs)
         p = context['object_list']
@@ -283,7 +287,8 @@ class AllBillCSVList(AllBillList):
                     "chamber",
                 ]]
 
-                entries.append("; ".join([x['name'] for x in bill['sponsors']]))
+                entries.append("; ".join([x['name']
+                               for x in bill['sponsors']]))
                 dates = sorted(bill['actions'], key=lambda x: x['date'])
                 fmt = "%Y-%m-%d"
                 entries.append(dates[0]['date'].strftime(fmt))
@@ -310,6 +315,7 @@ class AllBillCSVList(AllBillList):
 
 
 class BillFeed(BillList):
+
     """ does everything BillList does but outputs as RSS """
 
     show_per_page = 100
@@ -370,11 +376,15 @@ def bill(request, abbr, session, bill_id):
     fixed_bill_id = fix_bill_id(bill_id)
     # redirect if URL's id isn't fixed id without spaces
     if fixed_bill_id.replace(' ', '') != bill_id:
-        return redirect('bill', abbr=abbr, session=session, bill_id=fixed_bill_id.replace(' ', ''))
+        return redirect('bill',
+                        abbr=abbr,
+                        session=session,
+                        bill_id=fixed_bill_id.replace(' ', ''))
     bill = db.bills.find_one({settings.LEVEL_FIELD: abbr, 'session': session,
                               'bill_id': fixed_bill_id})
     if bill is None:
-        raise Http404(u'no bill found {0} {1} {2}'.format(abbr, session, bill_id))
+        raise Http404(
+            u'no bill found {0} {1} {2}'.format(abbr, session, bill_id))
 
     events = db.events.find({
         settings.LEVEL_FIELD: abbr,

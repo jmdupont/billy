@@ -27,6 +27,7 @@ class DateTimeAwareJSONEncoder(json.JSONEncoder):
 
 
 class BillyJSONEmitter(JSONEmitter):
+
     """
     Removes private fields (keys preceded by '_') recursively and
     outputs as JSON, with datetimes converted to strings.
@@ -70,11 +71,13 @@ class BillyJSONEmitter(JSONEmitter):
 
 
 class _vDatetime(icalendar.vDatetime):
+
     """
     The icalendar module outputs datetimes with VALUE=DATE,
     which breaks some calendar clients. This is a fix to
     use VALUE=DATETIME.
     """
+
     def __init__(self, dt):
         self.dt = dt
         self.params = icalendar.Parameters(dict(value='DATETIME'))
@@ -86,6 +89,7 @@ def clean_for_ical(obj):
 
 
 class ICalendarEmitter(Emitter):
+
     """
     Emits an iCalendar-format calendar from a list of 'event' objects.
 

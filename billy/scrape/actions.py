@@ -3,6 +3,7 @@ from collections import namedtuple, defaultdict, Iterable
 
 
 class Rule(namedtuple('Rule', 'regexes types stop attrs')):
+
     '''If any of ``regexes`` matches the action text, the resulting
     action's types should include ``types``.
 
@@ -57,6 +58,7 @@ class Rule(namedtuple('Rule', 'regexes types stop attrs')):
 
 
 class BaseCategorizer(object):
+
     '''A class that exposes a main categorizer function
     and before and after hooks, in case categorization requires specific
     steps that make use of action or category info. The return

@@ -14,6 +14,7 @@ class EventScraper(Scraper):
 
 
 class Event(SourcedObject):
+
     def __init__(self, session, when, type,
                  description, location, end=None, **kwargs):
         super(Event, self).__init__('event', **kwargs)

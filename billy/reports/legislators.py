@@ -10,13 +10,14 @@ checked_keys = ('photo_url', 'url', 'email', 'transparencydata_id', 'offices')
 
 def scan_legislators(abbr):
     duplicate_sources = defaultdict(int)
-    report = {'upper_active_count': 0,
-              'lower_active_count': 0,
-              'inactive_count': 0,
-              '_updated_today_count': 0,
-              '_updated_this_month_count': 0,
-              '_updated_this_year_count': 0,
-             }
+    report = {
+        'upper_active_count': 0,
+        'lower_active_count': 0,
+        'inactive_count': 0,
+        '_updated_today_count': 0,
+        '_updated_this_month_count': 0,
+        '_updated_this_year_count': 0,
+    }
     for key in checked_keys:
         report[key] = 0
 

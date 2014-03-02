@@ -18,72 +18,109 @@ def setup_func():
 
     fixtures.load_metadata()
 
-    db.legislators.insert({'state': 'ex',
-                           '_id': 'EXL000001', 'leg_id': 'EXL000001',
-                           'chamber': 'upper',
-                           'full_name': 'John Adams', 'first_name': 'John',
-                           'last_name': 'Adams', '_scraped_name': 'John Adams',
-                           'roles': [
-                               {'type': 'member', 'chamber': 'upper',
-                                'term': 'T1', 'state': 'ex'}
-                           ]
-                          })
+    db.legislators.insert(
+        {
+            'state': 'ex',
+            '_id': 'EXL000001', 'leg_id': 'EXL000001',
+            'chamber': 'upper',
+            'full_name': 'John Adams', 'first_name': 'John',
+            'last_name': 'Adams', '_scraped_name': 'John Adams',
+            'roles': [
+                {
+                    'type': 'member', 'chamber': 'upper',
+                    'term': 'T1', 'state': 'ex'
+                }
+            ]
+        })
 
 
 @with_setup(setup_func)
 def test_import_bill():
-    companion_data = {'_type': 'bill', 'state': 'ex', 'bill_id': 'A1',
-                      'chamber': 'upper', 'session': 'S1',
-                      'title': 'companion', 'sponsors': [], 'versions': [],
-                      'documents': [], 'votes': [], 'actions': [],
-                      'companions': [],
-                     }
-    data = {'_type': 'bill', 'state': 'ex', 'bill_id': 'S1',
-            'chamber': 'upper', 'session': 'S1',
-            'subjects': ['Pigs', 'Sheep', 'Horses'],
-            'sponsors': [{'name': 'Adams', 'type': 'primary'},
-                         {'name': 'Jackson', 'type': 'cosponsor'}],
-            'title': 'main title',
-            'alternate_titles': ['second title'],
-            'companions': [{'bill_id': 'A1', 'session': 'S1', 'chamber': None}
-                          ],
-            'versions': [{'title': 'old title',
-                          'url': 'http://example.com/old'},
-                         {'title': 'main title',
-                          'url': 'http://example.com/current'},
-                         ],
-            'documents': [{'title': 'fiscal note',
-                          'url': 'http://example.com/fn'}],
-            'actions': [{'action': 'Introduced', 'type': ['bill:introduced'],
-                         'actor': 'upper', 'date': 1331000000},
-                        {'action': 'Referred to committee',
-                         'type': ['committee:referred'], 'actor': 'upper',
-                         'date': 1332000000},
-                        {'action': 'Passed by voice vote',
-                         'type': ['bill:passed'], 'actor': 'upper',
-                         'date': 1333000000},
-                        {'action': 'Signed', 'type': ['governor:signed'],
-                         'actor': 'governor', 'date': 1334000000},
-                       ],
-            'votes': [{'motion': 'passage', 'chamber': 'upper', 'date': None,
-                       'yes_count': 1, 'no_count': 1, 'other_count': 0,
-                       'yes_votes': ['John Adams'],
-                       'no_votes': ['John Quincy Adams'],
-                       'other_votes': [],
-                      },
-                      {'motion': 'referral', 'chamber': 'upper', 'date': None,
-                       'yes_count': 0, 'no_count': 0, 'other_count': 0,
-                       'yes_votes': [], 'no_votes': [], 'other_votes': [],
-                       'committee': 'Committee on Agriculture',
-                      }],
-           }
+    companion_data = {
+        '_type': 'bill', 'state': 'ex', 'bill_id': 'A1',
+        'chamber': 'upper', 'session': 'S1',
+        'title': 'companion', 'sponsors': [], 'versions': [],
+        'documents': [], 'votes': [], 'actions': [],
+        'companions': [],
+    }
+    data = {
+        '_type': 'bill', 'state': 'ex', 'bill_id': 'S1',
+        'chamber': 'upper', 'session': 'S1',
+        'subjects': ['Pigs', 'Sheep', 'Horses'],
+        'sponsors': [
+            {
+                'name': 'Adams', 'type': 'primary'
+            },
+            {
+                'name': 'Jackson', 'type': 'cosponsor'
+            }
+        ],
+        'title': 'main title',
+        'alternate_titles': ['second title'],
+        'companions': [
+            {
+                'bill_id': 'A1',
+                'session': 'S1',
+                'chamber': None
+            }
+        ],
+        'versions': [
+            {
+                'title': 'old title',
+                'url': 'http://example.com/old'
+            },
+            {
+                'title': 'main title',
+                'url': 'http://example.com/current'
+            },
+        ],
+        'documents': [
+            {
+                'title': 'fiscal note',
+                'url': 'http://example.com/fn'
+            }
+        ],
+        'actions': [
+            {
+                'action': 'Introduced', 'type': ['bill:introduced'],
+                'actor': 'upper', 'date': 1331000000
+            },
+            {
+                'action': 'Referred to committee',
+                'type': ['committee:referred'], 'actor': 'upper',
+                'date': 1332000000
+            },
+            {
+                'action': 'Passed by voice vote',
+                'type': ['bill:passed'], 'actor': 'upper',
+                'date': 1333000000
+            },
+            {
+                'action': 'Signed', 'type': ['governor:signed'],
+                'actor': 'governor', 'date': 1334000000
+            },
+        ],
+        'votes': [{
+            'motion': 'passage', 'chamber': 'upper', 'date': None,
+            'yes_count': 1, 'no_count': 1, 'other_count': 0,
+            'yes_votes': ['John Adams'],
+            'no_votes': ['John Quincy Adams'],
+            'other_votes': [],
+        },
+            {
+                'motion': 'referral', 'chamber': 'upper', 'date': None,
+                'yes_count': 0, 'no_count': 0, 'other_count': 0,
+                'yes_votes': [], 'no_votes': [], 'other_votes': [],
+                'committee': 'Committee on Agriculture',
+            }],
+    }
     standalone_votes = {
         # chamber, session, bill id -> vote list
         ('upper', 'S1', 'S 1'): [
             {'motion': 'house passage', 'chamber': 'lower', 'date': None,
              'yes_count': 1, 'no_count': 0, 'other_count': 0,
              'yes_votes': [], 'no_votes': [], 'other_votes': [],
-            }
+             }
         ]
     }
 
@@ -174,14 +211,14 @@ def test_import_bill_with_partial_bill_vote_id():
             'votes': [],
             'actions': [],
             'companions': [],
-           }
+            }
     standalone_votes = {
         # chamber, session, bill id -> vote list
         ('upper', 'S1a', '1'): [
             {'motion': 'house passage', 'chamber': 'lower', 'date': None,
              'yes_count': 1, 'no_count': 0, 'other_count': 0,
              'yes_votes': [], 'no_votes': [], 'other_votes': [],
-            }
+             }
         ]
     }
 
@@ -243,7 +280,7 @@ def test_votematcher():
               'yes_count': 0, 'no_count': 0, 'other_count': 0},
              {'motion': 'a', 'chamber': 'b', 'date': 'c',
               'yes_count': 1, 'no_count': 2, 'other_count': 3},
-            ]
+             ]
     vm = bills.VoteMatcher('ex')
 
     vm.set_ids(votes)

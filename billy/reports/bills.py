@@ -167,13 +167,14 @@ def scan_bills(abbr):
             logger.warning('unnecessary {0} exceptions for {1} bills: \n  {2}'
                            .format(qe_type, len(qes), '\n  '.join(qes)))
 
-    return {'duplicate_versions': dup_version_urls,
-            'duplicate_sources': dup_source_urls,
-            'other_actions': other_actions.items(),
-            'uncategorized_subjects': uncategorized_subjects.items(),
-            'sessions': sessions,
-            'progress_meter_gaps': []
-           }
+    return {
+        'duplicate_versions': dup_version_urls,
+        'duplicate_sources': dup_source_urls,
+        'other_actions': other_actions.items(),
+        'uncategorized_subjects': uncategorized_subjects.items(),
+        'sessions': sessions,
+        'progress_meter_gaps': []
+    }
 
 
 def calculate_percentages(report):

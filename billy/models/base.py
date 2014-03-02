@@ -24,14 +24,17 @@ def get_model(classname):
 
 
 class classproperty(property):
+
     '''Based on the python 2.2 release notes--
     http://www.python.org/download/releases/2.2/descrintro/#property
     '''
+
     def __get__(self, cls, instance):
         return self.fget.__get__(None, instance)()
 
 
 class ModelBase(type):
+
     def __new__(meta, classname, bases, classdict):
         cls = type.__new__(meta, classname, bases, classdict)
 
@@ -43,6 +46,7 @@ class ModelBase(type):
 
 
 class ModelDefinitionError(Exception):
+
     '''Raised if there's a problem with a model definition.'''
     pass
 
@@ -52,6 +56,7 @@ class DoesNotExist(Exception):
 
 
 class Document(dict):
+
     '''
     This base class represents a MongoDB document.
 
@@ -136,6 +141,7 @@ class Document(dict):
 
 
 class AttrManager(object):
+
     def __init__(self, *args, **kwargs):
         pass
 
@@ -188,6 +194,7 @@ class AttrManager(object):
 
 
 class ListManager(list, AttrManager):
+
     def __iter__(self):
         wrapper = self._wrapper
         for obj in self.document[self._keyname]:
@@ -209,6 +216,7 @@ class ListManager(list, AttrManager):
 
 
 class DictManager(dict, AttrManager):
+
     def items(self):
         return [(k, self._wrapper(v)) for (k, v) in dict.items(self)]
 
@@ -223,6 +231,7 @@ class DictManager(dict, AttrManager):
 
 
 class RelatedDocument(object):
+
     '''
     Set an instance of this descriptor as a class attribute on a
     Document subclass, and when accessed from a document it will deference
@@ -231,6 +240,7 @@ class RelatedDocument(object):
     You can pass additional find_one arguments and limit the returned
     field, for example.
     '''
+
     def __init__(self, model, instance_key=None):
         self.model = model
         self.instance_key = instance_key
@@ -289,6 +299,7 @@ class RelatedDocument(object):
 
 
 class RelatedDocuments(object):
+
     '''
     Set an instance of this descriptor as class attribute on a Document
     subclass, and when accessed on an instance, it will return
@@ -296,6 +307,7 @@ class RelatedDocuments(object):
     the key `model_key`. For example, this could be used to get all
     "legislator" documents for a given "metadata".
     '''
+
     def __init__(self, model, model_keys, instance_key='_id',
                  sort=None, model_keys_operator='$or',
                  default_spec_instance_keys=None,
@@ -365,6 +377,7 @@ class RelatedDocuments(object):
 
 
 class CursorWrapper(object):
+
     '''The purpose of this hack is to make the original object
     accessible via its related name on related objects retrieved
     through a RelatedDocuments attribute.

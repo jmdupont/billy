@@ -32,14 +32,19 @@ class UpdateMissingIds(BaseCommand):
 
             print("Updating TransparencyData ids...")
             current_term = meta['terms'][-1]['name']
-            query = {'roles': {'$elemMatch':
-                               {'type': 'member',
-                                settings.LEVEL_FIELD: meta['abbreviation'],
-                                'term': current_term},
-                              },
-                     'transparencydata_id': None,
-                     'active': True,
-                    }
+            query = {
+                'roles':
+                {
+                    '$elemMatch':
+                    {
+                        'type': 'member',
+                        settings.LEVEL_FIELD: meta['abbreviation'],
+                        'term': current_term
+                    },
+                },
+                'transparencydata_id': None,
+                'active': True,
+            }
 
             updated = 0
             initial_count = db.legislators.find(query).count()

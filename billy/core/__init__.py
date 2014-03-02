@@ -24,6 +24,7 @@ global_group.add_argument('--cache_dir', dest='BILLY_CACHE_DIR')
 
 
 class Settings(object):
+
     def __init__(self):
         pass
 
@@ -67,6 +68,7 @@ _model_registry_by_collection = {}
 
 
 class ErrorProxy(object):
+
     def __init__(self, error):
         self.error = error
 
@@ -81,6 +83,7 @@ def _configure_db(host, port, db_name, user_db_name):
     global user_db
 
     class Transformer(SONManipulator):
+
         def transform_outgoing(self, son, collection,
                                mapping=_model_registry_by_collection):
             try:

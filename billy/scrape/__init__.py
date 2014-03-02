@@ -3,7 +3,7 @@ import time
 import logging
 import datetime
 import json
-import sys
+#import sys
 import traceback
 import scrapelib
 from billy.scrape.validator import DatetimeValidator
@@ -11,10 +11,13 @@ from billy.conf import settings
 
 _log = logging.getLogger("billy")
 
+
 class ScrapeError(Exception):
+
     """
     Base class for scrape errors.
     """
+
     def __init__(self, msg, orig_exception=None):
         self.msg = msg
         self.orig_exception = orig_exception
@@ -22,24 +25,30 @@ class ScrapeError(Exception):
     def __str__(self):
         if self.orig_exception:
             return '%s\nOriginal Exception: %s' % (self.msg,
-                                        self.orig_exception)
+                                                   self.orig_exception)
         else:
             return self.msg
 
+
 class NoDataForPeriod(ScrapeError):
+
     """
     Exception to be raised when no data exists for a given period
     """
+
     def __init__(self, period):
         self.period = period
 
     def __str__(self):
         return 'No data exists for %s' % self.period
 
+
 class JSONDateEncoder(json.JSONEncoder):
+
     """
     JSONEncoder that encodes datetime objects as Unix timestamps.
     """
+
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
             return time.mktime(obj.utctimetuple())
@@ -50,7 +59,9 @@ class JSONDateEncoder(json.JSONEncoder):
 # maps scraper_type -> scraper
 _scraper_registry = dict()
 
+
 class ScraperMeta(type):
+
     """ register derived scrapers in a central registry """
 
     def __new__(meta, classname, bases, classdict):
@@ -66,6 +77,7 @@ class ScraperMeta(type):
 
 
 class Scraper(scrapelib.Scraper):
+
     """ Base class for all Scrapers
 
     Provides several useful methods for retrieving URLs and checking
@@ -76,19 +88,19 @@ class Scraper(scrapelib.Scraper):
 
     latest_only = False
 
-
     """
     Filter only this bill id
     """
-    def set_filter_bill_id (self, billid):
+
+    def set_filter_bill_id(self, billid):
 #        _log.debug("old self.filter_bill_id was :%s" % self.filter_bill_id)
         self.filter_bill_id = billid
 #        _log.debug("net self.filter_bill_id= %s" % self.filter_bill_id)
 
-    def get_filter_bill_id (self):
+    def get_filter_bill_id(self):
 #        _log.debug("self.filter_bill_id %s" % self.filter_bill_id)
-        return self.filter_bill_id 
-        
+        return self.filter_bill_id
+
     def __init__(self, metadata, output_dir=None, strict_validation=None,
                  fastmode=False, **kwargs):
         """
@@ -119,7 +131,7 @@ class Scraper(scrapelib.Scraper):
         if self.output_dir is None:
             _log.debug("output_dir is none")
             raise Exception("output_dir missing")
-            
+
         _log.debug("output_dir %s" % self.output_dir)
         print ("output_dir: %s" % self.output_dir)
         os.path.isdir(self.output_dir) or os.path.makedirs(self.output_dir)
@@ -147,7 +159,6 @@ class Scraper(scrapelib.Scraper):
             _log.debug("Object : %s" % obj)
             _log.debug(ve)
 
-
             self.warning(str(ve))
             if self.strict_validation:
                 raise ve
@@ -158,7 +169,7 @@ class Scraper(scrapelib.Scraper):
 
         traceback.print_exc()
 
-        if 'terms' not in self.metadata: # we expect a metadata and terms
+        if 'terms' not in self.metadata:  # we expect a metadata and terms
             return sessions
 
         metadata_terms = self.metadata['terms']
@@ -203,11 +214,11 @@ class Scraper(scrapelib.Scraper):
             if term == self.metadata['terms'][-1]['name']:
                 return True
             else:
-                _log.debug("term:%s" %term)
-                _log.debug("does not equal name :%s" % self.metadata['terms'][-1]['name'])
+                _log.debug("term:%s" % term)
+                _log.debug("does not equal name :%s" %
+                           self.metadata['terms'][-1]['name'])
                 _log.debug("metadata:")
                 _log.debug(self.metadata)
-
 
                 raise NoDataForPeriod(term)
 
@@ -230,6 +241,7 @@ class Scraper(scrapelib.Scraper):
 
 
 class SourcedObject(dict):
+
     """ Base object used for data storage.
 
     Base class for :class:`~billy.scrape.bills.Bill`,
@@ -272,19 +284,19 @@ def get_scraper(mod_path, scraper_type):
         ScraperClass = _scraper_registry[scraper_type]
     except KeyError as e:
         raise ScrapeError("no %s scraper found in module %s" %
-                           (scraper_type, mod_path))
+                          (scraper_type, mod_path))
     return ScraperClass
 
 
 def check_sessions(metadata, sessions):
     all_sessions_in_terms = list(reduce(lambda x, y: x + y,
-                                   [x['sessions'] for x in metadata['terms']]))
+                                        [x['sessions'] for x
+                                         in metadata['terms']]))
     # copy the list to avoid modifying it
     metadata_session_details = list(metadata.get('_ignored_scraped_sessions',
                                                  []))
 
-
-    _log.debug("all_sessions_in_terms:%s" %all_sessions_in_terms)
+    _log.debug("all_sessions_in_terms:%s" % all_sessions_in_terms)
 
     for k, v in metadata['session_details'].iteritems():
         try:
@@ -301,7 +313,6 @@ def check_sessions(metadata, sessions):
 
     _log.debug("all_sessions_in_terms:%s" % all_sessions_in_terms)
 
-
     if all_sessions_in_terms:
         raise ScrapeError('no session_details for session(s): %r' %
                           all_sessions_in_terms)
@@ -309,7 +320,6 @@ def check_sessions(metadata, sessions):
     unaccounted_sessions = []
 
     _log.debug("metadata_session_details:%s" % metadata_session_details)
-    
 
     for s in sessions:
         if s not in metadata_session_details:
@@ -318,7 +328,8 @@ def check_sessions(metadata, sessions):
             unaccounted_sessions.append(s)
 
     for s in unaccounted_sessions:
-        if len(s) >0:
+        if len(s) > 0:
             _log.debug("unaccounted for")
-            _log.debug(s)           
-            raise ScrapeError('session(s) unaccounted for: %r' % unaccounted_sessions)
+            _log.debug(s)
+            raise ScrapeError('session(s) unaccounted for: %r' %
+                              unaccounted_sessions)

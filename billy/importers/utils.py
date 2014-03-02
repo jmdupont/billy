@@ -12,7 +12,7 @@ _log = logging.getLogger('billy')
 from billy import db
 from billy.conf import settings
 import sys
-import traceback  
+
 if settings.ENABLE_OYSTER:
     oyster_import_exception = None
     try:
@@ -287,15 +287,20 @@ def next_big_id(abbr, letter, collection):
     update = SON([('$inc', SON([('seq', 1)]))])
 
     seq = -1
-    try :
-        seq = db.command(SON([('findandmodify', collection),
-                          ('query', query),
-                          ('update', update),
-                          ('new', True),
-                          ('upsert', True)]))['value']['seq']
-    except Exception as e :
+    try:
+        seq = db.command(
+            SON(
+                [
+                    (
+                        'findandmodify', collection
+                    ),
+                    ('query', query),
+                    ('update', update),
+                    ('new', True),
+                    ('upsert', True)]))['value']['seq']
+    except Exception as e:
         traceback.print_exc(file=sys.stderr)
-        traceback.print_exc() 
+        traceback.print_exc()
         _log.error("ERROR")
         _log.debug(e)
 
@@ -314,8 +319,16 @@ def merge_legislators(leg1, leg2):
     roles = 'roles'
     old_roles = 'old_roles'
 
-    no_compare = set(('_id', 'leg_id', '_all_ids', '_locked_fields',
-        'created_at', 'updated_at', roles, old_roles))
+    no_compare = set(
+        (
+            '_id',
+            'leg_id',
+            '_all_ids',
+            '_locked_fields',
+            'created_at',
+            'updated_at',
+            roles,
+            old_roles))
 
     leg1['_all_ids'] += leg2['_all_ids']
 

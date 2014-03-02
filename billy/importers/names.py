@@ -42,6 +42,7 @@ def attempt_committee_match(abbr, chamber, name):
 
 
 class NameMatcher(object):
+
     """
     Match various forms of a name, provided they uniquely identify
     a person from everyone else we've seen.
@@ -247,6 +248,7 @@ class NameMatcher(object):
 
 
 class CommitteeNameMatcher(object):
+
     def __init__(self, abbr, term):
         self._manual = {'upper': {}, 'lower': {}, None: {}, 'joint': {}}
         self._abbr = abbr
