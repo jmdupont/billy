@@ -67,14 +67,14 @@ class Bill(SourcedObject):
         else:
             self['type'] = list(kwargs['type'])
 
-    def add_sponsor(self, type, name, **kwargs):
+    def add_sponsor(self, _type, name, **kwargs):
         """
         Associate a sponsor with this bill.
 
         :param type: the type of sponsorship, e.g. 'primary', 'cosponsor'
         :param name: the name of the sponsor as provided by the official source
         """
-        self['sponsors'].append(dict(type=type, name=name, **kwargs))
+        self['sponsors'].append(dict(type=_type, name=name, **kwargs))
 
     def add_document(self, name, url, mimetype=None, **kwargs):
         """
@@ -130,7 +130,7 @@ class Bill(SourcedObject):
         d = dict(name=name, url=url, mimetype=mimetype, **kwargs)
         self['versions'].append(d)
 
-    def add_action(self, actor, action, date, type=None, committees=None,
+    def add_action(self, actor, action, date, _type=None, committees=None,
                    legislators=None, **kwargs):
         """
         Add an action that was performed on this bill.
@@ -157,7 +157,7 @@ class Bill(SourcedObject):
                 obj = list(obj)
             return obj
 
-        type = _cleanup_list(type, ['other'])
+        _type = _cleanup_list(_type, ['other'])
         committees = _cleanup_list(committees, [])
         legislators = _cleanup_list(legislators, [])
 
@@ -182,7 +182,7 @@ class Bill(SourcedObject):
             })
 
         self['actions'].append(dict(actor=actor, action=action,
-                                    date=date, type=type,
+                                    date=date, type=_type,
                                     related_entities=related_entities,
                                     **kwargs))
 

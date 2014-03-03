@@ -26,7 +26,10 @@ class Rule(namedtuple('Rule', 'regexes types stop attrs')):
         for regex in regexes:
             if isinstance(regex, basestring):
                 if flexible_whitespace:
-                    regex = re.sub('\s{1,4}', '\s{,10}', regex)
+                    regex = re.sub(
+                        r'\s{1,4}',
+                        r'\s{,10}',
+                        regex)
                 compiled_regexes.append(re.compile(regex))
             else:
                 compiled_regexes.append(regex)

@@ -102,8 +102,8 @@ def test_update_sneaky_filter():
         return set(old) != set(new)
     sneaky_filter = {'set_field': _set_changed}
 
-    id = utils.insert_with_id(obj)
-    obj = db.bills.find_one(id)
+    _id = utils.insert_with_id(obj)
+    obj = db.bills.find_one(_id)
 
     # the set will be the same, shouldn't update
     utils.update(obj, {'set_field': [3, 2, 1]}, db.bills, sneaky_filter)

@@ -18,15 +18,15 @@ import difflib
 __metadata = {}
 
 
-def metadata(abbr, __metadata=__metadata):
+def metadata(abbr, l_metadata=__metadata):
     """
     Grab the metadata for the given two-letter abbreviation.
     """
     # This data should change very rarely and is queried very often so
     # cache it here
     abbr = abbr.lower()
-    if abbr in __metadata:
-        return __metadata[abbr]
+    if abbr in l_metadata:
+        return l_metadata[abbr]
     rv = db.metadata.find_one({'_id': abbr})
 
     __metadata[abbr] = rv
@@ -44,9 +44,9 @@ def parse_param_dt(dt):
     formats = ['%Y-%m-%d %H:%M',    # here for legacy reasons
                '%Y-%m-%dT%H:%M:%S',
                '%Y-%m-%d']
-    for format in formats:
+    for _format in formats:
         try:
-            return datetime.datetime.strptime(dt, format)
+            return datetime.datetime.strptime(dt, _format)
         except ValueError:
             pass
     raise ValueError('unable to parse %s' % dt)

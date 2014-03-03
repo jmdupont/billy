@@ -71,14 +71,18 @@ def committees(request, abbr):
     sort_key = request.GET.get('key', 'committee')
     sort_order = int(request.GET.get('order', 1))
 
-    committees = meta.committees_legislators(spec, fields=fields,
-                                             sort=[(sort_key, sort_order)])
+    _committees = meta.committees_legislators(
+        spec, fields=fields,
+        sort=[(sort_key, sort_order)])
 
     sort_order = -sort_order
 
     return TemplateResponse(
         request, templatename('committees'),
-        dict(chamber=chamber, committees=committees, abbr=abbr, metadata=meta,
+        dict(chamber=chamber,
+             committees=_committees,
+             abbr=abbr,
+             metadata=meta,
              chamber_name=chamber_name,
              chamber_select_template=templatename('chamber_select_form'),
              chamber_select_collection='committees',
@@ -103,8 +107,8 @@ def committee(request, abbr, committee_id):
         - billy/web/public/committee.html
         - billy/web/public/developer_committee.html
     '''
-    committee = db.committees.find_one({'_id': committee_id})
-    if committee is None:
+    _committee = db.committees.find_one({'_id': committee_id})
+    if _committee is None:
         raise Http404
 
     events = db.events.find({
@@ -115,11 +119,15 @@ def committee(request, abbr, committee_id):
     if len(events) > EVENT_PAGE_COUNT:
         events = events[:EVENT_PAGE_COUNT]
 
-    popularity.counter.inc('committees', committee_id, abbr=abbr)
+    popularity.counter.inc(
+        'committees',
+        committee_id,
+        abbr=abbr)
 
     return render(request, templatename('committee'),
-                  dict(committee=committee, abbr=abbr,
+                  dict(committee=_committee,
+                       abbr=abbr,
                        metadata=Metadata.get_object(abbr),
-                       sources=committee['sources'],
+                       sources=_committee['sources'],
                        nav_active='committees',
                        events=events))

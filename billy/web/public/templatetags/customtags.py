@@ -119,8 +119,8 @@ class SquishedWhitespaceNode(template.Node):
         self.nodelist = nodelist
 
     def render(self, context):
-        output = re.sub(u'\s+', ' ', self.nodelist.render(context))
-        output = re.sub(u'\n\s+', '', self.nodelist.render(context))
+        output = re.sub(r'\s+', ' ', self.nodelist.render(context))
+        output = re.sub(r'\n\s+', '', self.nodelist.render(context))
         return output
 
 

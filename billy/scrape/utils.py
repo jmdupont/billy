@@ -11,30 +11,30 @@ def url_xpath(url, path):
     return doc.xpath(path)
 
 
-def convert_pdf(filename, type='xml'):
+def convert_pdf(filename, _type='xml'):
     commands = {'text': ['pdftotext', '-layout', filename, '-'],
                 'text-nolayout': ['pdftotext', filename, '-'],
                 'xml': ['pdftohtml', '-xml', '-stdout', filename],
                 'html': ['pdftohtml', '-stdout', filename]}
     try:
-        pipe = subprocess.Popen(commands[type], stdout=subprocess.PIPE,
+        pipe = subprocess.Popen(commands[_type], stdout=subprocess.PIPE,
                                 close_fds=True).stdout
     except OSError as e:
         raise EnvironmentError("error running %s, missing executable? [%s]" %
-                               ' '.join(commands[type]), e)
+                               ' '.join(commands[_type]), e)
     data = pipe.read()
     pipe.close()
     return data
 
 
-def pdf_to_lxml(filename, type='html'):
+def pdf_to_lxml(filename, _type='html'):
     import lxml.html
-    text = convert_pdf(filename, type)
+    text = convert_pdf(filename, _type)
     return lxml.html.fromstring(text)
 
 
 def clean_spaces(s):
-    return re.sub('\s+', ' ', s, flags=re.U).strip()
+    return re.sub(r'\s+', ' ', s, flags=re.U).strip()
 
 
 class PlaintextColumns(object):
@@ -86,7 +86,7 @@ class PlaintextColumns(object):
         '''
         ends = collections.Counter()
         for line in self.text.splitlines():
-            for matchobj in re.finditer('\s{2,}', line.lstrip()):
+            for matchobj in re.finditer(r'\s{2,}', line.lstrip()):
                 ends[matchobj.end()] += 1
         return ends
 
@@ -143,7 +143,7 @@ class PlaintextColumns(object):
         for boundary in self.boundaries:
             cell = line.lstrip()[boundary].strip()
             if cell:
-                for cell in re.split('\s{3,}', cell):
+                for cell in re.split(r'\s{3,}', cell):
                     yield cell
             else:
                 yield None

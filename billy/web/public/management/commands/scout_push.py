@@ -95,7 +95,8 @@ class Command(NoArgsCommand):
             resp = requests.post(url, data=payload)
             _log.info('[%s] %s', resp.status_code, resp.content)
 
-    def _translate_filter_data(self, favorite, params):
+    @staticmethod
+    def _translate_filter_data(favorite, params):
         '''Edit the favorite['search_params'] object and make them
         match the param names used in an api request.
         '''

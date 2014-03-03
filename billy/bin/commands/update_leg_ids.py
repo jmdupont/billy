@@ -36,8 +36,8 @@ class UpdateLegIds(BaseCommand):
                                    'session': session})
             for vote in votes:
                 vote['_voters'] = []
-                for type in ('yes_votes', 'no_votes', 'other_votes'):
-                    for voter in vote[type]:
+                for _type in ('yes_votes', 'no_votes', 'other_votes'):
+                    for voter in vote[_type]:
                         voter['leg_id'] = get_legislator_id(args.abbr,
                                                             vote['session'],
                                                             vote['chamber'],

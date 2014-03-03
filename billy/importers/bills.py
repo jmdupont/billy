@@ -286,14 +286,18 @@ def import_bill(data, standalone_votes, categorizer):
     for action in data['actions']:
         adate = action['date']
 
-        def _match_committee(name):
-            return get_committee_id(abbr, action['actor'], name)
+        actor = action['actor']
 
-        def _match_legislator(name):
-            return get_legislator_id(abbr,
-                                     data['session'],
-                                     action['actor'],
-                                     name)
+        _match_committee = lambda (name): get_committee_id(
+            abbr,
+            actor,
+            name)
+
+        _match_legislator = lambda (name): get_legislator_id(
+            abbr,
+            data['session'],
+            actor,
+            name)
 
         resolvers = {
             "committee": _match_committee,
@@ -306,11 +310,11 @@ def import_bill(data, standalone_votes, categorizer):
                     resolver = resolvers[entity['type']]
                 except KeyError as e:
                     # We don't know how to deal.
-                    logger.error("I don't know how to sort a %s" % e)
+                    logger.error("I don't know how to sort a %s", e)
                     continue
 
-                id = resolver(entity['name'])
-                entity['id'] = id
+                _id = resolver(entity['name'])
+                entity['id'] = _id
 
         # first & last dates
         if not dates['first'] or adate < dates['first']:
@@ -410,7 +414,7 @@ def import_bills(abbr, data_dir):
     try:
         categorizer = SubjectCategorizer(abbr)
     except Exception as e:
-        logger.debug('Proceeding without subject categorizer: %s' % e)
+        logger.debug('Proceeding without subject categorizer: %s', e)
         categorizer = None
 
     paths = glob.glob(pattern)
@@ -422,10 +426,10 @@ def import_bills(abbr, data_dir):
         ret = import_bill(data, votes, categorizer)
         counts[ret] += 1
 
-    logger.info('imported %s bill files' % len(paths))
+    logger.info('imported %s bill files', len(paths))
 
     for remaining in votes.keys():
-        logger.debug('Failed to match vote %s %s %s' % tuple([
+        logger.debug('Failed to match vote %s %s %s', tuple([
             r.encode('ascii', 'replace') for r in remaining]))
 
     populate_current_fields(abbr)
@@ -483,9 +487,9 @@ def prepare_votes(abbr, session, bill_id, scraped_votes):
         for vtype in ('yes_votes', 'no_votes', 'other_votes'):
             svlist = []
             for svote in vote[vtype]:
-                id = get_legislator_id(abbr, session, vote['chamber'], svote)
-                svlist.append({'name': svote, 'leg_id': id})
-                vote['_voters'].append(id)
+                _id = get_legislator_id(abbr, session, vote['chamber'], svote)
+                svlist.append({'name': svote, 'leg_id': _id})
+                vote['_voters'].append(_id)
 
             vote[vtype] = svlist
 

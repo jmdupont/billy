@@ -46,7 +46,7 @@ def text_after_line_numbers(lines):
     for line in lines.splitlines():
         # real bill text starts with an optional space, line number
         # more spaces, then real text
-        match = re.match('\s*\d+\s+(.*)', line)
+        match = re.match(r'\s*\d+\s+(.*)', line)
         if match:
             text.append(match.group(1))
 
@@ -54,9 +54,9 @@ def text_after_line_numbers(lines):
     return '\n'.join(text).decode('utf-8', 'ignore')
 
 
-def id_to_url(id):
-    abbr = id[0:2].lower()
-    return 'http://{0}/{1}/{2}'.format(settings.AWS_BUCKET, abbr, id)
+def id_to_url(_id):
+    abbr = _id[0:2].lower()
+    return 'http://{0}/{1}/{2}'.format(settings.AWS_BUCKET, abbr, _id)
 
 
 def s3_get(abbr, doc):

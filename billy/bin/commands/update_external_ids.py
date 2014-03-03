@@ -25,12 +25,12 @@ class UpdateMissingIds(BaseCommand):
 
             meta = db.metadata.find_one({'_id': abbr.lower()})
             if not meta:
-                print("'{0}' does not exist in the database.".format(abbr))
+                print "'{0}' does not exist in the database.".format(abbr)
                 sys.exit(1)
             else:
-                print("Updating ids for {0}".format(abbr))
+                print "Updating ids for {0}".format(abbr)
 
-            print("Updating TransparencyData ids...")
+            print "Updating TransparencyData ids..."
             current_term = meta['terms'][-1]['name']
             query = {'roles': {'$elemMatch':
                                {'type': 'member',

@@ -33,13 +33,13 @@ def extract_fields(d, fields, delimiter='|'):
 
 
 # TODO: make prefix/use_cname configurable
-def upload(abbr, filename, type, s3_prefix='downloads/', use_cname=True):
+def upload(abbr, filename, _type, s3_prefix='downloads/', use_cname=True):
     today = datetime.date.today()
 
     # build URL
     s3_bucket = settings.AWS_BUCKET
     s3_path = '%s%s-%02d-%02d-%s-%s.zip' % (s3_prefix, today.year, today.month,
-                                            today.day, abbr, type)
+                                            today.day, abbr, _type)
     if use_cname:
         s3_url = 'http://%s/%s' % (s3_bucket, s3_path)
     else:
@@ -50,16 +50,16 @@ def upload(abbr, filename, type, s3_prefix='downloads/', use_cname=True):
     bucket = s3conn.create_bucket(s3_bucket)
     k = Key(bucket)
     k.key = s3_path
-    logging.info('beginning upload to %s' % s3_url)
+    logging.info('beginning upload to %s', s3_url)
     k.set_contents_from_filename(filename)
     k.set_acl('public-read')
 
     meta = metadata(abbr)
-    meta['latest_%s_url' % type] = s3_url
-    meta['latest_%s_date' % type] = datetime.datetime.utcnow()
+    meta['latest_%s_url' % _type] = s3_url
+    meta['latest_%s_date' % _type] = datetime.datetime.utcnow()
     db.metadata.save(meta, safe=True)
 
-    logging.info('uploaded to %s' % s3_url)
+    logging.info('uploaded to %s', s3_url)
 
 # JSON ################################
 
@@ -253,7 +253,7 @@ class DumpJSON(BaseCommand):
         scraper = scrapelib.Scraper(requests_per_minute=600,
                                     follow_robots=False)
 
-        zip = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
+        _zip = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
 
         if not schema_dir:
             cwd = os.path.split(__file__)[0]
@@ -270,7 +270,7 @@ class DumpJSON(BaseCommand):
 
         # write out metadata
         response = scraper.urlopen(api_url('metadata/%s' % abbr)).bytes
-        zip.writestr('metadata.json', response)
+        _zip.writestr('metadata.json', response)
 
         logging.info('exporting %s legislators...' % abbr)
         for legislator in db.legislators.find({settings.LEVEL_FIELD: abbr}):
@@ -282,7 +282,7 @@ class DumpJSON(BaseCommand):
                 validictory.validate(json.loads(response), legislator_schema,
                                      validator_cls=APIValidator)
 
-            zip.writestr(path, response)
+            _zip.writestr(path, response)
 
         logging.info('exporting %s committees...' % abbr)
         for committee in db.committees.find({settings.LEVEL_FIELD: abbr}):
@@ -294,7 +294,7 @@ class DumpJSON(BaseCommand):
                 validictory.validate(json.loads(response), committee_schema,
                                      validator_cls=APIValidator)
 
-            zip.writestr(path, response)
+            _zip.writestr(path, response)
 
         logging.info('exporting %s bills...' % abbr)
         for bill in db.bills.find({settings.LEVEL_FIELD: abbr}, timeout=False):
@@ -307,6 +307,6 @@ class DumpJSON(BaseCommand):
                 validictory.validate(json.loads(response), bill_schema,
                                      validator_cls=APIValidator)
 
-            zip.writestr(path, response)
+            _zip.writestr(path, response)
 
-        zip.close()
+        _zip.close()

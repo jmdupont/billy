@@ -72,6 +72,7 @@ class Document(dict):
 
     # The attribute name that should point to this object in related
     # documents.
+    # TODO : FIXME this related_name is overridden by related_name
     related_name = None
 
     def __init__(self, *args, **kwargs):
@@ -86,8 +87,8 @@ class Document(dict):
         try:
             return cls._related_name
         except:
-            related_name = cls.__name__.lower()
-            return related_name
+            _related_name = cls.__name__.lower()
+            return _related_name
 
     @property
     def _related_cache(self):

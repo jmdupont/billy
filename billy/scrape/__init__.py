@@ -98,11 +98,11 @@ class Scraper(scrapelib.Scraper):
 
         types = ('bill', 'committee', 'person', 'vote', 'event', 'speech')
 
-        for type in types:
+        for _type in types:
             schema_path = os.path.join(os.path.split(__file__)[0],
-                                       '../schemas/%s.json' % type)
-            self._schema[type] = json.load(open(schema_path))
-            self._schema[type]['properties'][settings.LEVEL_FIELD] = {
+                                       '../schemas/%s.json' % _type)
+            self._schema[_type] = json.load(open(schema_path))
+            self._schema[_type]['properties'][settings.LEVEL_FIELD] = {
                 'minLength': 2, 'type': 'string'}
 
         # bills & votes

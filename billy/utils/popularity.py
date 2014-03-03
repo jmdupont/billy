@@ -4,8 +4,8 @@ from billy.core import db
 
 class Counter(object):
 
-    def __init__(self, db, collection_name='popularity_counts'):
-        self.counts = getattr(db, collection_name)
+    def __init__(self, _db, collection_name='popularity_counts'):
+        self.counts = getattr(_db, collection_name)
 
     def inc(self, type_name, obj_id, **kwargs):
         self.counts.update({

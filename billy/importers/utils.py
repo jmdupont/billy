@@ -13,10 +13,10 @@ from billy.core import db, settings
 from billy.importers.names import attempt_committee_match
 
 
-def _get_property_dict(schema):
+def _get_property_dict(schema_obj):
     """ given a schema object produce a nested dictionary of fields """
     pdict = {}
-    for k, v in schema['properties'].iteritems():
+    for k, v in schema_obj['properties'].iteritems():
         pdict[k] = {}
         if 'items' in v and 'properties' in v['items']:
             pdict[k] = _get_property_dict(v['items'])
@@ -61,7 +61,7 @@ def insert_with_id(obj):
     # get abbr
     abbr = obj[settings.LEVEL_FIELD].upper()
 
-    id_reg = re.compile('^%s%s' % (abbr, id_type))
+    id_reg = re.compile(r'^%s%s' % (abbr, id_type))
 
     # Find the next available _id and insert
     id_prefix = '%s%s' % (abbr, id_type)
@@ -99,18 +99,18 @@ def _timestamp_to_dt(timestamp):
 def compare_committee(ctty1, ctty2):
     def _cleanup(obj):
         ctty_junk_words = [
-            "(\s+|^)standing(\s+|$)",
-            "(\s+|^)committee(\s+|$)",
-            "(\s+|^)on(\s+|$)",
-            "(\s+|^)joint(\s+|$)",
-            "(\s+|^)house(\s+|$)",
-            "(\s+|^)senate(\s+|$)",
-            "[,\.\!\+\/]"
+            r"(\s+|^)standing(\s+|$)",
+            r"(\s+|^)committee(\s+|$)",
+            r"(\s+|^)on(\s+|$)",
+            r"(\s+|^)joint(\s+|$)",
+            r"(\s+|^)house(\s+|$)",
+            r"(\s+|^)senate(\s+|$)",
+            r"[,\.\!\+\/]"
         ]
         obj = obj.strip().lower()
         for junk in ctty_junk_words:
             obj = re.sub(junk, " ", obj).strip()
-        obj = re.sub("\s+", " ", obj)
+        obj = re.sub(r"\s+", " ", obj)
         obj = re.sub(r'\s+', ' ', re.sub(r'\W+', ' ', obj)).strip()
         return obj
     check_both = [
@@ -256,10 +256,10 @@ def prepare_obj(obj):
 
 def next_big_id(abbr, letter, collection):
     query = SON([('_id', abbr)])
-    update = SON([('$inc', SON([('seq', 1)]))])
+    update_ = SON([('$inc', SON([('seq', 1)]))])
     seq = db.command(SON([('findandmodify', collection),
                           ('query', query),
-                          ('update', update),
+                          ('update', update_),
                           ('new', True),
                           ('upsert', True)]))['value']['seq']
     return "%s%s%08d" % (abbr.upper(), letter, seq)

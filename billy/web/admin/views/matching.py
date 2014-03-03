@@ -60,8 +60,10 @@ def edit(request, abbr):
 
 
 @is_superuser
-def remove(request, abbr=None, id=None):
-    db.manual.name_matchers.remove({"_id": ObjectId(id)}, safe=True)
+def remove(request,
+           abbr=None,
+           _id=None):
+    db.manual.name_matchers.remove({"_id": ObjectId(_id)}, safe=True)
     return redirect('admin_matching', abbr)
 
 
