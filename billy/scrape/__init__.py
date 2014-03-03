@@ -112,9 +112,9 @@ class Scraper(scrapelib.Scraper):
         """
 
         # configure underlying scrapelib object
-        kwargs['cache_obj'] = scrapelib.FileCache(settings.BILLY_CACHE_DIR)
+        #kwargs['cache_obj'] = scrapelib.FileCache(settings.BILLY_CACHE_DIR)
         kwargs['requests_per_minute'] = settings.SCRAPELIB_RPM
-        kwargs['timeout'] = settings.SCRAPELIB_TIMEOUT
+        #kwargs['timeout'] = settings.SCRAPELIB_TIMEOUT
         kwargs['retry_attempts'] = settings.SCRAPELIB_RETRY_ATTEMPTS
         kwargs['retry_wait_seconds'] = settings.SCRAPELIB_RETRY_WAIT_SECONDS
 
@@ -229,7 +229,10 @@ class Scraper(scrapelib.Scraper):
 
     def save_object(self, obj):
         # copy over LEVEL_FIELD
-        obj[settings.LEVEL_FIELD] = getattr(self, settings.LEVEL_FIELD)
+        if hasattr(self, settings.LEVEL_FIELD):
+            obj[settings.LEVEL_FIELD] = getattr(self, settings.LEVEL_FIELD)
+        else:
+            _log.debug(self.__dict__)
 
         filename = obj.get_filename()
         with open(os.path.join(self.output_dir, self.scraper_type, filename),
