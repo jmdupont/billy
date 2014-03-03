@@ -73,26 +73,32 @@ def legislators(request, abbr):
         sort_key = request.GET.get('key', sort_key)
         sort_order = int(request.GET.get('order', sort_order))
 
-    legislators = meta.legislators(extra_spec=spec, fields=fields)
+    _legislators = meta.legislators(extra_spec=spec, fields=fields)
 
     def sort_by_district(obj):
+        """Sort the legislators by district.
+        """
         matchobj = re.search(r'\d+', obj.get('district', '') or '')
         if matchobj:
             return int(matchobj.group())
         else:
             return obj.get('district', '')
 
-    legislators = sorted(legislators, key=sort_by_district)
+    _legislators = sorted(_legislators, key=sort_by_district)
 
     if sort_key != 'district':
-        legislators = sorted(legislators, key=operator.itemgetter(sort_key),
-                             reverse=(sort_order == -1))
+        _legislators = sorted(
+            _legislators,
+            key=operator.itemgetter(sort_key),
+            reverse=(sort_order == -1))
     else:
-        legislators = sorted(legislators, key=sort_by_district,
-                             reverse=bool(0 > sort_order))
+        _legislators = sorted(
+            _legislators,
+            key=sort_by_district,
+            reverse=bool(0 > sort_order))
 
     sort_order = {1: -1, -1: 1}[sort_order]
-    legislators = list(legislators)
+    _legislators = list(_legislators)
 
     return TemplateResponse(
         request, templatename('legislators'),
@@ -101,7 +107,9 @@ def legislators(request, abbr):
              chamber_select_template=templatename('chamber_select_form'),
              chamber_select_collection='legislators',
              chamber_select_chambers=chambers, show_chamber_column=True,
-             abbr=abbr, legislators=legislators, sort_order=sort_order,
+             abbr=abbr,
+             legislators=_legislators,
+             sort_order=sort_order,
              sort_key=sort_key,
              legislator_table=templatename('legislator_table'),
              nav_active='legislators'))
@@ -110,6 +118,7 @@ def legislators(request, abbr):
 @ensure_csrf_cookie
 def legislator(request, abbr, _id, slug=None):
     '''
+    TODO: slug not used
     Context:
         - feed_entry_template
         - vote_preview_row_template
@@ -139,59 +148,62 @@ def legislator(request, abbr, _id, slug=None):
     except DoesNotExist:
         raise Http404
 
-    legislator = db.legislators.find_one({'_id': _id})
-    if legislator is None:
+    _legislator = db.legislators.find_one({'_id': _id})
+    if _legislator is None:
         spec = {'_all_ids': _id}
         cursor = db.legislators.find(spec)
         msg = 'Two legislators returned for spec %r' % spec
         assert cursor.count() < 2, msg
         try:
-            legislator = cursor.next()
+            _legislator = cursor.next()
         except StopIteration:
             raise Http404('No legislator was found with leg_id = %r' % _id)
         else:
-            return redirect(legislator.get_absolute_url(), permanent=True)
+            return redirect(_legislator.get_absolute_url(), permanent=True)
 
     popularity.counter.inc('legislators', _id, abbr=abbr)
 
-    if not legislator['active']:
-        return legislator_inactive(request, abbr, legislator)
+    if not _legislator['active']:
+        return legislator_inactive(request, abbr, _legislator)
 
     district_id = None
-    API_KEY = getattr(billy_settings, 'API_KEY', '')
-    if API_KEY:
+    api_key = getattr(billy_settings, 'API_KEY', '')
+    if api_key:
         qurl = "%sdistricts/%s/?apikey=%s" % (
             billy_settings.API_BASE_URL,
             abbr,
             billy_settings.API_KEY
         )
         try:
-            f = urllib2.urlopen(qurl)
-            districts = json.load(f)
+            data = urllib2.urlopen(qurl)
+            districts = json.load(data)
             district_id = None
             for district in districts:
                 legs = [x['leg_id'] for x in district['legislators']]
-                if legislator['leg_id'] in legs:
+                if _legislator['leg_id'] in legs:
                     district_id = district['boundary_id']
                     break
         except urllib2.URLError:
             district_id = None
 
-    sponsored_bills = legislator.sponsored_bills(
+    sponsored_bills = _legislator.sponsored_bills(
         limit=6, sort=[('action_dates.first', pymongo.DESCENDING)])
 
     # Note to self: Another slow query
-    legislator_votes = legislator.votes_6_sorted()
+    legislator_votes = _legislator.votes_6_sorted()
     has_votes = bool(legislator_votes)
-    feed_entries = legislator.feed_entries()
+    feed_entries = _legislator.feed_entries()
     feed_entries_list = list(feed_entries.limit(5))
     return render(
         request, templatename('legislator'),
         dict(feed_entry_template=templatename('feed_entry'),
              vote_preview_row_template=templatename('vote_preview_row'),
-             roles=legislator.roles_manager, abbr=abbr,
-             district_id=district_id, metadata=meta, legislator=legislator,
-             sources=legislator['sources'],
+             roles=_legislator.roles_manager,
+             abbr=abbr,
+             district_id=district_id,
+             metadata=meta,
+             legislator=_legislator,
+             sources=_legislator['sources'],
              sponsored_bills=list(sponsored_bills),
              legislator_votes=list(legislator_votes),
              has_feed_entries=bool(feed_entries_list),
@@ -202,7 +214,7 @@ def legislator(request, abbr, _id, slug=None):
              nav_active='legislators'))
 
 
-def legislator_inactive(request, abbr, legislator):
+def legislator_inactive(request, abbr, _legislator):
     '''
     Context:
         - feed_entry_template
@@ -222,21 +234,21 @@ def legislator_inactive(request, abbr, legislator):
         - billy/web/public/feed_entry.html
         - billy/web/public/vote_preview_row.html
     '''
-    sponsored_bills = legislator.sponsored_bills(
+    sponsored_bills = _legislator.sponsored_bills(
         limit=6, sort=[('action_dates.first', pymongo.DESCENDING)])
 
-    legislator_votes = list(legislator.votes_6_sorted())
+    legislator_votes = list(_legislator.votes_6_sorted())
     has_votes = bool(legislator_votes)
 
     return render(
         request, templatename('legislator'),
         dict(feed_entry_template=templatename('feed_entry'),
              vote_preview_row_template=templatename('vote_preview_row'),
-             old_roles=legislator.old_roles_manager,
+             old_roles=_legislator.old_roles_manager,
              abbr=abbr,
-             metadata=legislator.metadata,
-             legislator=legislator,
-             sources=legislator['sources'],
+             metadata=_legislator.metadata,
+             legislator=_legislator,
+             sources=_legislator['sources'],
              sponsored_bills=list(sponsored_bills),
              legislator_votes=legislator_votes,
              has_votes=has_votes,
