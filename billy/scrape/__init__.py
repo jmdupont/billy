@@ -155,7 +155,7 @@ class Scraper(scrapelib.Scraper):
 
         if not hasattr(self, '_schema'):
             _log.debug("No schema")
-            return 
+            return
         try:
             self.validator.validate(obj, self._schema)
         except ValueError as ve:
