@@ -1,3 +1,6 @@
+"""
+Favorites view
+"""
 import datetime
 import collections
 from itertools import groupby
@@ -23,7 +26,7 @@ class Favorites(dict):
     methods.
     '''
 
-    def favorites_exist(self, type_):
+    def favorites_exist(self, type_):        
         if type_ not in self:
             return False
         for obj in self[type_]:
@@ -163,14 +166,14 @@ def is_favorite(obj_id, obj_type, user, extra_spec=None):
 
 
 @login_required
-def favorites(request):
-    favorites = get_user_favorites(request.user.username)
+def f_favorites(request):
+    _favorites = get_user_favorites(request.user.username)
     profile = user_db.profiles.find_one(request.user.username)
     return render(request, templatename('user_favorites'),
-                  dict(favorites=favorites,
+                  dict(favorites=_favorites,
                        profile=profile,
-                       legislators=favorites.legislator_objects(),
-                       committees=favorites.committee_objects()))
+                       legislators=_favorites.legislator_objects(),
+                       committees=_favorites.committee_objects()))
 
 
 @login_required
@@ -204,14 +207,14 @@ def set_favorite(request):
 
     # Toggle the value of is_favorite.
     if request.POST['is_favorite'] == 'false':
-        is_favorite = False
+        _is_favorite = False
     if request.POST['is_favorite'] == 'true':
-        is_favorite = True
-    is_favorite = not is_favorite
+        _is_favorite = True
+    _is_favorite = not _is_favorite
 
     # Create the doc.
     doc = dict(
-        is_favorite=is_favorite,
+        is_favorite=_is_favorite,
         timestamp=datetime.datetime.utcnow(),
     )
     doc.update(spec)
@@ -247,7 +250,7 @@ def favorite_bills_csv(request):
     '''Generate a csv of the user's favorited bills.
     '''
     # Get the faves.
-    favorites = get_user_favorites(request.user.username)
+    _favorites = get_user_favorites(request.user.username)
 
     # Create a csv resposne.
     response = HttpResponse(mimetype='text/csv')
@@ -262,7 +265,7 @@ def favorite_bills_csv(request):
     writer.writeheader()
 
     # Write in each bill.
-    for bill in favorites['bill']:
+    for bill in _favorites['bill']:
         bill = mdb.bills.find_one(bill['obj_id'])
         sponsors = (sp['name'] for sp in bill.sponsors_manager)
         row = (
