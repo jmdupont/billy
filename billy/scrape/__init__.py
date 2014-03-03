@@ -150,7 +150,12 @@ class Scraper(scrapelib.Scraper):
 
     def validate_json(self, obj):
         if not hasattr(self, '_schema'):
-            self._schema = self._get_schema()
+            if hasattr(self, '_get_schema'):
+                self._schema = self._get_schema()
+
+        if not hasattr(self, '_schema'):
+            _log.debug("No schema")
+            return 
         try:
             self.validator.validate(obj, self._schema)
         except ValueError as ve:
