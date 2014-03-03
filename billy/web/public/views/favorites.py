@@ -26,7 +26,7 @@ class Favorites(dict):
     methods.
     '''
 
-    def favorites_exist(self, type_):        
+    def favorites_exist(self, type_):
         if type_ not in self:
             return False
         for obj in self[type_]:
