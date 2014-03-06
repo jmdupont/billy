@@ -6,6 +6,9 @@ import urllib
 import datetime
 import urlparse
 import contextlib
+import logging
+
+from billy import db
 
 from bson import ObjectId
 from django.core.exceptions import ImproperlyConfigured
@@ -16,7 +19,6 @@ import difflib
 
 # metadata cache
 __metadata = {}
-
 
 def metadata(abbr, __metadata=__metadata):
     """
@@ -31,7 +33,6 @@ def metadata(abbr, __metadata=__metadata):
 
     __metadata[abbr] = rv
     return rv
-
 
 def chamber_name(abbr, chamber):
     if chamber in ('joint', 'other'):
@@ -80,14 +81,6 @@ def term_for_session(abbr, session, meta=None):
 
     raise ValueError("no such session '%s'" % session)
 
-
-def urlescape(url):
-    scheme, netloc, path, qs, anchor = urlparse.urlsplit(url)
-    path = urllib.quote(path, '/%')
-    qs = urllib.quote_plus(qs, ':&=')
-    return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
-
-
 def textual_diff(l1, l2):
     lines = {}
     types = {
@@ -111,7 +104,6 @@ def textual_diff(l1, l2):
             "line": lastfix
         }
     return lines
-
 
 # fixing bill ids
 _bill_id_re = re.compile(r'([A-Z]*)\s*0*([-\d]+)')
@@ -183,3 +175,38 @@ class CachedAttr(object):
         result = self.method(inst)
         setattr(inst, self.name, result)
         return result
+
+
+def extract_fields(d, fields, delimiter='|'):
+    """ get values out of an object ``d`` for saving to a csv """
+    rd = {}
+    for f in fields:
+        v = d.get(f, None)
+        if isinstance(v, (str, unicode)):
+            v = v.encode('utf8')
+        elif isinstance(v, list):
+            v = delimiter.join(v)
+        rd[f] = v
+    return rd
+
+
+def configure_logging(module=None):
+
+    if module:
+        format = (
+            "BILLY:%(pathname)s %(asctime)s %(name)s %(levelname)s "
+            + module + " %(funcName)s %(lineno)d %(message)s")
+    else:
+        format = (
+            'BILLY2:'
+            '%(pathname)s '
+            ' %(asctime)s %(name)s'
+            ' %(levelname)s'
+            ' %(funcName)s'
+            ' %(lineno)d'
+            ' %(message)s')
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format=format, datefmt="%H:%M:%S")
+
+
