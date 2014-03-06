@@ -8,8 +8,6 @@ import urlparse
 import contextlib
 import logging
 
-from billy import db
-
 from bson import ObjectId
 from django.core.exceptions import ImproperlyConfigured
 
