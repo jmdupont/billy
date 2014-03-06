@@ -80,10 +80,9 @@ def _get_configured_scraper(scraper_type, options, metadata):
         ScraperClass = get_scraper(options.module, scraper_type)
     except ScrapeError as e:
         # silence error only when alldata is present
-        if (
-                'alldata' in options.types and
-                str(e.orig_exception) == 'No module named %s' % scraper_type
-        ):
+        if 'alldata' in options.types and (
+                'no %s scraper found in' %
+                scraper_type) in str(e):
             return None
         else:
             raise e
@@ -104,6 +103,9 @@ def _run_scraper(scraper_type, options, metadata):
         scraper_type: bills, legislators, committees, votes
     """
     _clear_scraped_data(options.output_dir, scraper_type)
+    if scraper_type == 'speeches':
+        _clear_scraped_data(options.output_dir, 'events')
+
     scraper = _get_configured_scraper(scraper_type, options, metadata)
     if not scraper:
         return [{
@@ -121,7 +123,7 @@ def _run_scraper(scraper_type, options, metadata):
     }
     scrape['start_time'] = dt.datetime.utcnow()
 
-    if scraper_type in ('bills', 'votes', 'events'):
+    if scraper_type in ('bills', 'votes', 'events', 'speeches'):
         times = options.sessions
         for time in times:
             scraper.validate_session(time, scraper.latest_only)
@@ -130,21 +132,29 @@ def _run_scraper(scraper_type, options, metadata):
         for time in times:
             scraper.validate_term(time, scraper.latest_only)
 
-    #
+    # bill id filter
     if (not(options.billid is False)):
         scraper.set_filter_bill_id(options.billid)
 
     # run scraper against year/session/term
     for time in times:
         # old style
+        chambers = options.chambers
+        if scraper_type == 'events' and len(options.chambers) == 2:
+            chambers.append('other')
+
         if _is_old_scrape(scraper.scrape):
-            for chamber in options.chambers:
+            for chamber in chambers:
                 scraper.scrape(chamber, time)
         else:
-            scraper.scrape(time, chambers=options.chambers)
+            scraper.scrape(time, chambers=chambers)
 
-        if scraper_type == 'events' and len(options.chambers) == 2:
-            scraper.scrape('other', time)
+        # error out if events or votes don't scrape anything
+        if not scraper.object_count and scraper_type not in ('events',
+                                                             'votes'):
+            raise ScrapeError("%s scraper didn't save any objects" %
+                              scraper_type)
+
 
     scrape['end_time'] = dt.datetime.utcnow()
     runs.append(scrape)
@@ -176,9 +186,10 @@ def _do_imports(abbrev, args):
     from billy.importers.legislators import import_legislators
     from billy.importers.committees import import_committees
     from billy.importers.events import import_events
+    from billy.importers.speeches import import_speeches
 
     # always import metadata and districts
-    import_metadata(abbrev, settings.BILLY_DATA_DIR)
+    import_metadata(abbrev)
 
     dist_filename = os.path.join(settings.BILLY_MANUAL_DATA_DIR, 'districts',
                                  '%s.csv' % abbrev)
@@ -192,8 +203,8 @@ def _do_imports(abbrev, args):
             _log.debug(dist)
             db.districts.save(dist, safe=True)
     else:
-        _log.warning("%s not found, continuing without "
-                     "districts" % dist_filename)
+        logging.getLogger('billy').warning("%s not found, continuing without "
+                                           "districts" % dist_filename)
 
     report = {}
 
@@ -212,19 +223,22 @@ def _do_imports(abbrev, args):
             settings.BILLY_DATA_DIR
         )
 
-    if 'events' in args.types:
-        report['events'] = import_events(
-            abbrev,
-            settings.BILLY_DATA_DIR)
+    if 'events' in args.types or 'speeches' in args.types:
+        report['events'] = import_events(abbrev, settings.BILLY_DATA_DIR)
+
+    if 'speeches' in args.types:
+        report['speeches'] = import_speeches(abbrev, settings.BILLY_DATA_DIR)
 
     return report
 
 
 def _do_reports(abbrev, args):
-    from billy import db
+    from billy.core import db
     from billy.reports.bills import bill_report
+    from billy.reports.votes import vote_report
     from billy.reports.legislators import legislator_report
     from billy.reports.committees import committee_report
+    from billy.reports.speeches import speech_report
 
     report = db.reports.find_one({'_id': abbrev})
     if not report:
@@ -234,8 +248,11 @@ def _do_reports(abbrev, args):
         report['legislators'] = legislator_report(abbrev)
     if 'bills' in args.types:
         report['bills'] = bill_report(abbrev)
+        report['votes'] = vote_report(abbrev)
     if 'committees' in args.types:
         report['committees'] = committee_report(abbrev)
+    if 'speeches' in args.types:
+        report['speeches'] = speech_report(abbrev)
 
     _log.debug(report)
     db.reports.save(report, safe=True)
@@ -277,7 +294,8 @@ def main(old_scrape_compat=False):
                 'legislators',
                 'committees',
                 'votes',
-                'events'):
+                'events',
+                'speeches'):
             what.add_argument(
                 '--' + arg,
                 action='append_const',
@@ -339,7 +357,7 @@ def main(old_scrape_compat=False):
             sys.path.insert(0, newpath)
 
         # get metadata
-        module = __import__(args.module)
+        module = importlib.import_module(args.module)
         metadata = module.metadata
         module_settings = getattr(module, 'settings', {})
         abbrev = metadata['abbreviation']
@@ -347,14 +365,6 @@ def main(old_scrape_compat=False):
         # load module settings, then command line settings
         settings.update(module_settings)
         settings.update(args)
-
-        configure_logging(args.module)
-
-        # configure oyster
-        if settings.ENABLE_OYSTER:
-            from oyster.conf import settings as oyster_settings
-            oyster_settings.DOCUMENT_CLASSES[
-                args.module + ':billtext'] = module.document_class
 
         # make output dir
         args.output_dir = os.path.join(settings.BILLY_DATA_DIR, abbrev)
@@ -386,16 +396,17 @@ def main(old_scrape_compat=False):
             args.chambers = ['upper', 'lower']
 
         if not args.actions:
-            if old_scrape_compat:
-                args.actions = ['scrape']
-            else:
-                args.actions = ['scrape', 'import', 'report']
+            args.actions = ['scrape', 'import', 'report']
 
         if not args.types:
             args.types = ['bills', 'legislators', 'votes', 'committees',
                           'alldata']
+
             if 'events' in metadata['feature_flags']:
                 args.types.append('events')
+
+            if 'speeches' in metadata['feature_flags']:
+                args.types.append('speeches')
 
         plan = """billy-update abbr=%s
     actions=%s
@@ -419,12 +430,13 @@ def main(old_scrape_compat=False):
                 session_list = module.session_list()
             else:
                 session_list = []
+            check_sessions(metadata, session_list)
 
             _log.debug("Session List %s" % session_list)
             try:
-                check_sessions(metadata, session_list)
-            except:
-                _log.debug("check_sessions failed")
+                schema_path = os.path.join(os.path.split(__file__)[0],
+                                           '../schemas/metadata.json')
+                schema = json.load(open(schema_path))
 
             try:
                 schema_path = os.path.join(
@@ -461,7 +473,8 @@ def main(old_scrape_compat=False):
                     'committees',
                     'votes',
                     'bills',
-                    'events')
+                    'events',
+                    'speeches')
             else:
                 _log.debug("going to process bills")
                 order = ('bills',)  # only process the bills
@@ -487,7 +500,7 @@ def main(old_scrape_compat=False):
             exec_record['started'] = exec_start
             exec_record['ended'] = exec_end
             scrape_data['scraped'] = exec_record
-            scrape_data['state'] = abbrev
+            scrape_data['abbr'] = abbrev
 
             for record in run_record:
                 if "exception" in record:
@@ -552,6 +565,12 @@ def main(old_scrape_compat=False):
         # reports
         if 'report' in args.actions:
             _do_reports(abbrev, args)
+
+        if 'session-list' in args.actions:
+            if hasattr(module, 'session_list'):
+                print("\n".join(module.session_list()))
+            else:
+                raise ScrapeError('session_list() is not defined')
 
     except ScrapeError as e:
         _log.debug("in update.py Scrape error")

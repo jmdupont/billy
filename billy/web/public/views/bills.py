@@ -203,7 +203,6 @@ class RelatedBillsList(RelatedObjectsList):
 
 
 class BillList(RelatedBillsList):
-
     '''
     Context:
         - Determined by RelatedBillsList.get_context_data
@@ -221,7 +220,6 @@ class BillList(RelatedBillsList):
 
 
 class AllBillList(RelatedBillsList):
-
     '''
     Context:
         - Determined by RelatedBillsList.get_context_data
@@ -240,7 +238,6 @@ class AllBillList(RelatedBillsList):
 
 
 class AllBillCSVList(AllBillList):
-
     '''
     Context:
         - Determined by RelatedBillsList.get_context_data
@@ -248,7 +245,6 @@ class AllBillCSVList(AllBillList):
     Teamplates:
        - None, creates a csv.
     '''
-
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(*args, **kwargs)
         p = context['object_list']
@@ -315,8 +311,7 @@ class AllBillCSVList(AllBillList):
 
 
 class BillFeed(BillList):
-
-    """ does everything BillList does but outputs as RSS """
+    """ Does everything BillList does but outputs as RSS. """
 
     show_per_page = 100
 
