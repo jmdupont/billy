@@ -233,7 +233,6 @@ def _do_imports(abbrev, args):
 
 
 def _do_reports(abbrev, args):
-    from billy.core import db
     from billy.reports.bills import bill_report
     from billy.reports.votes import vote_report
     from billy.reports.legislators import legislator_report
@@ -347,8 +346,8 @@ def main(old_scrape_compat=False):
             # turn on PDB-on-error mode
             # stolen from http://stackoverflow.com/questions/1237379/
             # if this causes problems in interactive mode check that page
-            def _tb_info(type, value, tb):
-                traceback.print_exception(type, value, tb)
+            def _tb_info(_type, value, tb):
+                traceback.print_exception(_type, value, tb)
                 _debugger.pm()
             sys.excepthook = _tb_info
 

@@ -15,14 +15,14 @@ class EventScraper(Scraper):
 
 class Event(SourcedObject):
 
-    def __init__(self, session, when, type,
+    def __init__(self, session, when, _type,
                  description, location, end=None, **kwargs):
         super(Event, self).__init__('event', **kwargs)
         self.uuid = uuid.uuid1()  # If we need to save an event more than once
 
         self['session'] = session
         self['when'] = when
-        self['type'] = type
+        self['type'] = _type
         self['description'] = description
         self['end'] = end
         self['participants'] = []
@@ -31,13 +31,13 @@ class Event(SourcedObject):
         self['related_bills'] = []
         self.update(kwargs)
 
-    def add_document(self, name, url, type=None, mimetype=None, **kwargs):
+    def add_document(self, name, url, _type=None, mimetype=None, **kwargs):
         d = dict(name=name, url=url, **kwargs)
         if mimetype:
             d['mimetype'] = mimetype
-        if not type:
-            type = "other"
-        d['type'] = type
+        if not _type:
+            _type = "other"
+        d['type'] = _type
         self['documents'].append(d)
 
     def add_related_bill(self, bill_id, **kwargs):
@@ -45,12 +45,12 @@ class Event(SourcedObject):
         self['related_bills'].append(kwargs)
 
     def add_participant(self,
-                        type,
+                        _type,
                         participant,
                         participant_type,
                         **kwargs):
 
-        kwargs.update({'type': type,
+        kwargs.update({'type': _type,
                        'participant_type': participant_type,
                        'participant': participant})
 

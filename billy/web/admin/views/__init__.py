@@ -467,13 +467,13 @@ def summary_index(request, abbr, session):
 
     def build_summary(abbr):
 
-        bills = list(db.bills.find({settings.LEVEL_FIELD: abbr,
+        _bills = list(db.bills.find({settings.LEVEL_FIELD: abbr,
                                     'session': session}))
         res = {}
         for k in object_types:
-            res[k] = build(chain.from_iterable(map(itemgetter(k), bills)))
+            res[k] = build(chain.from_iterable(map(itemgetter(k), _bills)))
 
-        res.update(bills=build(bills))
+        res.update(bills=build(_bills))
 
         return res
 
@@ -665,11 +665,13 @@ def bill_list(request, abbr):
     if exceptions:
         spec['_id'] = {'$nin': list(exceptions)}
         query_text += ' (excluding {0} exceptions)'.format(len(exceptions))
-    bills = list(mdb.bills.find(spec))
+    _bills = list(mdb.bills.find(spec))
 
-    bill_ids = [b['_id'] for b in bills if b['_id'] not in exceptions]
+    bill_ids = [b['_id'] for b in _bills if b['_id'] not in exceptions]
 
-    context = {'metadata': meta, 'query_text': query_text, 'bills': bills,
+    context = {'metadata': meta,
+               'query_text': query_text,
+               'bills': _bills,
                'bill_ids': bill_ids}
     return render(request, 'billy/bill_list.html', context)
 
@@ -721,7 +723,7 @@ def legislators(request, abbr):
 def subjects(request, abbr):
     meta = metadata(abbr)
 
-    subjects = db.subjects.find({
+    _subjects = db.subjects.find({
         'abbr': abbr.lower()
     })
 
@@ -730,10 +732,10 @@ def subjects(request, abbr):
     uc_subjects = []
     c_subjects = {}
 
-    for sub in subjects:
+    for sub in _subjects:
         c_subjects[sub['remote']] = sub
 
-    subjects.rewind()
+    _subjects.rewind()
 
     uniqid = 1
 
@@ -748,15 +750,15 @@ def subjects(request, abbr):
 
     return render(request, 'billy/subjects.html', {
         'metadata': meta,
-        'subjects': subjects,
+        'subjects': _subjects,
         'normalized_subjects': normalized_subjects,
         'uncat_subjects': uc_subjects
     })
 
 
 @is_superuser
-def subjects_remove(request, abbr=None, id=None):
-    db.subjects.remove({"_id": id}, safe=True)
+def subjects_remove(request, abbr=None, _id=None):
+    db.subjects.remove({"_id": _id}, safe=True)
     return redirect('admin_subjects', abbr)
 
 
@@ -769,7 +771,7 @@ def subjects_commit(request, abbr):
 
     payload = dict(request.POST)
     if 'sub' in payload:
-        del(payload['sub'])
+        del payload['sub']
 
     catd_subjects = defaultdict(dict)
 
@@ -881,13 +883,13 @@ def quality_exception_commit(request, abbr):
             if o[settings.LEVEL_FIELD] != abbr:
                 error.append("Object %s is not from '%s'." % (obj, abbr))
 
-    type = get['extype'].strip()
-    if type not in QUALITY_EXCEPTIONS:
-        error.append("Type %s is not a real type" % type)
+    _type = get['extype'].strip()
+    if _type not in QUALITY_EXCEPTIONS:
+        error.append("Type %s is not a real type" % _type)
 
     notes = get['notes'].strip()
 
-    if type == "":
+    if _type == "":
         error.append("Empty type")
 
     if notes == "":
@@ -903,7 +905,7 @@ def quality_exception_commit(request, abbr):
         "abbr": abbr,
         "notes": notes,
         "ids": objects,
-        "type": type
+        "type": _type
     })
 
     return redirect('quality_exceptions', abbr)
@@ -913,13 +915,16 @@ def quality_exception_commit(request, abbr):
 def events(request, abbr):
     meta = metadata(abbr)
 
-    events = db.events.find({settings.LEVEL_FIELD: abbr.lower()},
-                            sort=[('when', pymongo.DESCENDING)]).limit(20)
+    _events = db.events.find(
+        {
+            settings.LEVEL_FIELD: abbr.lower()
+        },
+        sort=[('when', pymongo.DESCENDING)]).limit(20)
 
     # sort and get rid of old events.
 
     return render(request, 'billy/events.html', {
-        'events': ((e, e['_id']) for e in events),
+        'events': ((e, e['_id']) for e in _events),
         'metadata': meta,
     })
 
@@ -927,18 +932,18 @@ def events(request, abbr):
 @is_superuser
 def event(request, abbr, event_id):
     meta = metadata(abbr)
-    event = db.events.find_one(event_id)
+    _event = db.events.find_one(event_id)
     return render(request, 'billy/events.html', {
-        'event': event,
+        'event': _event,
         'metadata': meta,
     })
 
 
 @is_superuser
-def legislator_edit(request, id):
-    leg = db.legislators.find_one({'_all_ids': id})
+def legislator_edit(request, _id):
+    leg = db.legislators.find_one({'_all_ids': _id})
     if not leg:
-        raise Http404('No legislators found for id %r.' % id)
+        raise Http404('No legislators found for id %r.' % _id)
 
     meta = metadata(leg[settings.LEVEL_FIELD])
     return render(request, 'billy/legislator_edit.html', {
@@ -985,7 +990,7 @@ def legislator_edit_commit(request):
             })
 
     for key in ["leg_id", "csrfmiddlewaretoken"]:
-        del(payload[key])
+        del payload[key]
 
     update = {}
     locked = []
@@ -1008,10 +1013,10 @@ def legislator_edit_commit(request):
 
 
 @is_superuser
-def retire_legislator(request, id):
-    legislator = db.legislators.find_one({'_all_ids': id})
+def retire_legislator(request, _id):
+    legislator = db.legislators.find_one({'_all_ids': _id})
     if not legislator:
-        raise Http404('No legislators found for id %r.' % id)
+        raise Http404('No legislators found for id %r.' % _id)
 
     # retire a legislator
     abbr = legislator[settings.LEVEL_FIELD]
@@ -1059,11 +1064,16 @@ def committees(request, abbr):
 @is_superuser
 def delete_committees(request):
     ids = request.POST.getlist('committees')
-    committees = db.committees.find({'_id': {'$in': ids}})
-    abbr = committees[0][settings.LEVEL_FIELD]
+    _committees = db.committees.find({'_id': {'$in': ids}})
+    abbr = _committees[0][settings.LEVEL_FIELD]
     if not request.POST.get('confirm'):
-        return render(request, 'billy/delete_committees.html',
-                      {'abbr': abbr, 'committees': committees})
+        return render(
+            request, 'billy/delete_committees.html',
+            {
+                'abbr': abbr,
+                'committees': _committees
+            }
+        )
     else:
         db.committees.remove({'_id': {'$in': ids}}, safe=True)
         return redirect('admin_committees', abbr)
@@ -1071,10 +1081,10 @@ def delete_committees(request):
 
 @is_superuser
 def mom_index(request, abbr):
-    legislators = list(db.legislators.find({settings.LEVEL_FIELD: abbr}))
+    _legislators = list(db.legislators.find({settings.LEVEL_FIELD: abbr}))
     return render(request, 'billy/mom_index.html', {
         "abbr": abbr,
-        "legs": legislators
+        "legs": _legislators
     })
 
 
@@ -1324,7 +1334,8 @@ def progress_meter_gaps(request, abbr):
         raise Http404('No metadata found for abbreviation %r' % abbr)
     report = mdb.reports.find_one({'_id': abbr})
     ids = report['bills']['progress_meter_gaps']
-    bills = db.bills.find({'_id': {'$in': ids}})
+    _bills = db.bills.find({'_id': {'$in': ids}})
     context = {'metadata': meta, 'bill_ids': ids,
-               'bills': bills, 'query_text': 'progress meter gaps exist'}
+               'bills': _bills,
+               'query_text': 'progress meter gaps exist'}
     return render(request, 'billy/bill_list.html', context)

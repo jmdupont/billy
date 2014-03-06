@@ -65,7 +65,6 @@ def _get_vote_fields(fields):
 
 
 class BillyHandlerMetaClass(HandlerMetaClass):
-
     """
     Returns 404 if Handler result is None.
     """
@@ -99,7 +98,6 @@ class BillyHandlerMetaClass(HandlerMetaClass):
 
 
 class BillyHandler(BaseHandler):
-
     """
     Base handler for the Billy API.
     """
@@ -271,9 +269,9 @@ class BillSearchHandler(BillyHandler):
 
 class LegislatorHandler(BillyHandler):
 
-    def read(self, request, id):
+    def read(self, request, _id):
         return db.legislators.find_one(
-            {'_all_ids': id},
+            {'_all_ids': _id},
             _build_field_list(request))
 
 
@@ -305,8 +303,8 @@ class LegislatorSearchHandler(BillyHandler):
 
 class CommitteeHandler(BillyHandler):
 
-    def read(self, request, id):
-        return db.committees.find_one({'_all_ids': id},
+    def read(self, request, _id):
+        return db.committees.find_one({'_all_ids': _id},
                                       _build_field_list(request))
 
 
@@ -325,12 +323,12 @@ class CommitteeSearchHandler(BillyHandler):
 
 class EventsHandler(BillyHandler):
 
-    def read(self, request, id=None, events=[]):
+    def read(self, request, _id=None, events=[]):
         if events:
             return events
 
         if id:
-            return db.events.find_one({'_id': id})
+            return db.events.find_one({'_id': _id})
 
         spec = {}
 
@@ -455,20 +453,22 @@ class LegislatorGeoHandler(BillyHandler):
 class DistrictHandler(BillyHandler):
 
     def read(self, request, abbr, chamber=None):
-        filter = {'abbr': abbr}
+        _filter = {'abbr': abbr}
         if not chamber:
             chamber = {'$exists': True}
-        filter['chamber'] = chamber
-        districts = list(db.districts.find(filter))
+        _filter['chamber'] = chamber
+        districts = list(db.districts.find(_filter))
 
         # change leg filter
-        filter[settings.LEVEL_FIELD] = filter.pop('abbr')
-        filter['active'] = True
-        legislators = db.legislators.find(filter, fields={'_id': 0,
-                                                          'leg_id': 1,
-                                                          'chamber': 1,
-                                                          'district': 1,
-                                                          'full_name': 1})
+        _filter[settings.LEVEL_FIELD] = _filter.pop('abbr')
+        _filter['active'] = True
+        legislators = db.legislators.find(
+            _filter,
+            fields={'_id': 0,
+                    'leg_id': 1,
+                    'chamber': 1,
+                    'district': 1,
+                    'full_name': 1})
 
         leg_dict = defaultdict(list)
         for leg in legislators:
@@ -529,7 +529,12 @@ class BoundaryHandler(BillyHandler):
 
 class NewsHandler(BillyHandler):
 
-    def read(self, request, id):
+    def read(self, request, _id):
         fields = ['entity_ids', 'entity_strings', 'link']
-        entries = feeds_db.entries.find({'entity_ids': id}, fields=fields)
-        return dict(count=entries.count(), entries=list(entries))
+        entries = feeds_db.entries.find(
+            {'entity_ids': _id},
+            fields=fields)
+        return dict(
+            count=entries.count(),
+            entries=list(entries)
+        )

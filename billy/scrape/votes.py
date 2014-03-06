@@ -25,7 +25,7 @@ class Vote(SourcedObject):
     sequence = itertools.count()
 
     def __init__(self, chamber, date, motion, passed,
-                 yes_count, no_count, other_count, type='other', **kwargs):
+                 yes_count, no_count, other_count, _type='other', **kwargs):
         """
         Create a new :obj:`Vote`.
 
@@ -58,7 +58,7 @@ class Vote(SourcedObject):
         self['yes_count'] = yes_count
         self['no_count'] = no_count
         self['other_count'] = other_count
-        self['type'] = type
+        self['type'] = _type
         self['yes_votes'] = []
         self['no_votes'] = []
         self['other_votes'] = []
@@ -93,15 +93,15 @@ class Vote(SourcedObject):
         if self['yes_votes'] or self['no_votes'] or self['other_votes']:
             # If we have *any* specific votes, then validate the counts
             # for all types.
-            for type in ('yes', 'no', 'other'):
-                votes = len(self[type + '_votes'])
-                count = self[type + '_count']
+            for _type in ('yes', 'no', 'other'):
+                votes = len(self[_type + '_votes'])
+                count = self[_type + '_count']
                 if votes != count:
                     raise ValueError('bad %s vote count for %s %s votes=%s'
                                      ' count=%s %r' %
-                                     (type, self.get('bill_id', ''),
+                                     (_type, self.get('bill_id', ''),
                                       self['motion'], votes, count,
-                                      self[type + '_votes']))
+                                      self[_type + '_votes']))
 
     def get_filename(self):
         filename = '%s_%s_%s_seq%s.json' % (self['session'],

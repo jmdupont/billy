@@ -120,8 +120,8 @@ class OrderedSet(collections.MutableSet):
 
     def discard(self, key):
         if key in self.map:
-            key, prev, next = self.map.pop(key)
-            prev[NEXT] = next
+            key, prev, _next = self.map.pop(key)
+            prev[NEXT] = _next
             next[PREV] = prev
 
     def __iter__(self):

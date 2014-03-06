@@ -29,7 +29,8 @@ class MongoIndex(BaseCommand):
                  ('chamber', pymongo.ASCENDING)],
                 [(settings.LEVEL_FIELD, pymongo.ASCENDING),
                  ('committee', pymongo.ASCENDING),
-                 ('subcommittee', pymongo.ASCENDING)]
+                 ('subcommittee', pymongo.ASCENDING)
+                ]
             ],
             'events': [
                 [

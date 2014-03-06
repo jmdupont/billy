@@ -2,6 +2,7 @@ import os
 import re
 import time
 import json
+import copy
 import datetime
 import traceback
 from bson.son import SON
@@ -13,22 +14,18 @@ from billy import db
 from billy.conf import settings
 import sys
 
-if settings.ENABLE_OYSTER:
-    oyster_import_exception = None
-    try:
-        from oyster.core import kernel
-    except ImportError as e:
-        kernel = None               # noqa
-        oyster_import_exception = e
+from billy.core import db, settings
+from billy.importers.names import attempt_committee_match
 
 
-def _get_property_dict(schema):
+def _get_property_dict(schema_obj):
     """ given a schema object produce a nested dictionary of fields """
     pdict = {}
-    for k, v in schema['properties'].iteritems():
+    for k, v in schema_obj['properties'].iteritems():
         pdict[k] = {}
         if 'items' in v and 'properties' in v['items']:
             pdict[k] = _get_property_dict(v['items'])
+    pdict[settings.LEVEL_FIELD] = {}
     return pdict
 
 
@@ -43,7 +40,8 @@ def fix_bill_id(bill_id):
 
 # load standard fields from schema files
 standard_fields = {}
-for _type in ('bill', 'person', 'committee', 'metadata', 'vote', 'event'):
+for _type in ('bill', 'person', 'committee', 'metadata', 'vote',
+              'event', 'speech'):
     fname = os.path.join(os.path.split(__file__)[0],
                          '../schemas/%s.json' % _type)
     schema = json.load(open(fname))
@@ -77,14 +75,14 @@ def insert_with_id(obj):
     # get abbr
     abbr = obj[settings.LEVEL_FIELD].upper()
 
-    id_reg = re.compile('^%s%s' % (abbr, id_type))
+    id_reg = re.compile(r'^%s%s' % (abbr, id_type))
 
     # Find the next available _id and insert
     id_prefix = '%s%s' % (abbr, id_type)
     cursor = collection.find({'_id': id_reg}).sort('_id', -1).limit(1)
 
     try:
-        new_id = int(cursor.next()['_id'][3:]) + 1
+        new_id = int(cursor.next()['_id'][len(abbr) + 1:]) + 1
     except StopIteration:
         new_id = 1
 
@@ -115,17 +113,18 @@ def _timestamp_to_dt(timestamp):
 def compare_committee(ctty1, ctty2):
     def _cleanup(obj):
         ctty_junk_words = [
-            "(\s+|^)committee(\s+|$)",
-            "(\s+|^)on(\s+|$)",
-            "(\s+|^)joint(\s+|$)",
-            "(\s+|^)house(\s+|$)",
-            "(\s+|^)senate(\s+|$)",
-            "[,\.\!\+\/]"
+            r"(\s+|^)standing(\s+|$)",
+            r"(\s+|^)committee(\s+|$)",
+            r"(\s+|^)on(\s+|$)",
+            r"(\s+|^)joint(\s+|$)",
+            r"(\s+|^)house(\s+|$)",
+            r"(\s+|^)senate(\s+|$)",
+            r"[,\.\!\+\/]"
         ]
         obj = obj.strip().lower()
         for junk in ctty_junk_words:
             obj = re.sub(junk, " ", obj).strip()
-        obj = re.sub("\s+", " ", obj)
+        obj = re.sub(r"\s+", " ", obj)
         obj = re.sub(r'\s+', ' ', re.sub(r'\W+', ' ', obj)).strip()
         return obj
     check_both = [
@@ -192,6 +191,8 @@ def update(old, new, collection, sneaky_update_filter=None):
         old['updated_at'] = datetime.datetime.utcnow()
         collection.save(old, safe=True)
 
+    return need_save
+
 
 def convert_timestamps(obj):
     """
@@ -206,7 +207,7 @@ def convert_timestamps(obj):
             except TypeError:
                 raise TypeError("expected float for %s, got %s" % (key, value))
 
-    for key in ('sources', 'actions', 'votes'):
+    for key in ('sources', 'actions', 'votes', 'roles'):
         for child in obj.get(key, []):
             convert_timestamps(child)
 
@@ -313,8 +314,9 @@ def merge_legislators(leg1, leg2):
     if leg1['_id'] > leg2['_id']:
         leg1, leg2 = leg2, leg1
 
-    leg1 = leg1.copy()
-    leg2 = leg2.copy()
+    # use deep copy for roles
+    leg1 = copy.deepcopy(leg1)
+    leg2 = copy.deepcopy(leg2)
 
     roles = 'roles'
     old_roles = 'old_roles'
@@ -363,7 +365,7 @@ def merge_legislators(leg1, leg2):
         #      old_roles & roles!! There's a potenital for data loss, but it's
         #      not that big of a thing.
         #   -- paultag & jamesturk, 02-02-2012
-        if len(leg1[roles]) > 0:
+        if len(leg1[roles]) > 0 and leg2[roles][0] != leg1[roles][0]:
             crole = leg1[roles][0]
             try:
                 leg1[old_roles][crole['term']].append(crole)
@@ -378,12 +380,25 @@ def merge_legislators(leg1, leg2):
             # OK. We've migrated the newly old roles to the old_roles entry.
             leg1[roles] = [leg2[roles][0]]
 
+    # copy over old_roles from other terms
+    for term in leg2.get('old_roles', {}):
+        if term not in leg1['old_roles']:
+            leg1['old_roles'][term] = leg2['old_roles'][term]
+
     return (leg1, leg2['_id'])
 
 __committee_ids = {}
 
 
 def get_committee_id(abbr, chamber, committee):
+
+    manual = attempt_committee_match(abbr,
+                                     chamber,
+                                     committee)
+
+    if manual:
+        return manual
+
     key = (abbr, chamber, committee)
     if key in __committee_ids:
         return __committee_ids[key]

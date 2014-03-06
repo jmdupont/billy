@@ -18,19 +18,21 @@ import difflib
 # metadata cache
 __metadata = {}
 
-def metadata(abbr, __metadata=__metadata):
+
+def metadata(abbr, l_metadata=__metadata):
     """
     Grab the metadata for the given two-letter abbreviation.
     """
     # This data should change very rarely and is queried very often so
     # cache it here
     abbr = abbr.lower()
-    if abbr in __metadata:
-        return __metadata[abbr]
+    if abbr in l_metadata:
+        return l_metadata[abbr]
     rv = db.metadata.find_one({'_id': abbr})
 
     __metadata[abbr] = rv
     return rv
+
 
 def chamber_name(abbr, chamber):
     if chamber in ('joint', 'other'):
@@ -43,21 +45,19 @@ def parse_param_dt(dt):
     formats = ['%Y-%m-%d %H:%M',    # here for legacy reasons
                '%Y-%m-%dT%H:%M:%S',
                '%Y-%m-%d']
-    for format in formats:
+    for _format in formats:
         try:
-            return datetime.datetime.strptime(dt, format)
+            return datetime.datetime.strptime(dt, _format)
         except ValueError:
             pass
     raise ValueError('unable to parse %s' % dt)
 
 
 class JSONEncoderPlus(json.JSONEncoder):
-
     """
     JSONEncoder that encodes datetime objects as Unix timestamps and mongo
     ObjectIds as strings.
     """
-
     def default(self, obj, **kwargs):
         if isinstance(obj, datetime.datetime):
             return time.mktime(obj.utctimetuple())
@@ -78,6 +78,14 @@ def term_for_session(abbr, session, meta=None):
             return term['name']
 
     raise ValueError("no such session '%s'" % session)
+
+
+def urlescape(url):
+    scheme, netloc, path, qs, anchor = urlparse.urlsplit(url)
+    path = urllib.quote(path, '/%')
+    qs = urllib.quote_plus(qs, ':&=')
+    return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
+
 
 def textual_diff(l1, l2):
     lines = {}
@@ -102,6 +110,7 @@ def textual_diff(l1, l2):
             "line": lastfix
         }
     return lines
+
 
 # fixing bill ids
 _bill_id_re = re.compile(r'([A-Z]*)\s*0*([-\d]+)')
@@ -150,7 +159,6 @@ def cd(path):
 
 
 class CachedAttr(object):
-
     '''Computes attribute value and caches it in instance.
 
     Example:
@@ -173,38 +181,3 @@ class CachedAttr(object):
         result = self.method(inst)
         setattr(inst, self.name, result)
         return result
-
-
-def extract_fields(d, fields, delimiter='|'):
-    """ get values out of an object ``d`` for saving to a csv """
-    rd = {}
-    for f in fields:
-        v = d.get(f, None)
-        if isinstance(v, (str, unicode)):
-            v = v.encode('utf8')
-        elif isinstance(v, list):
-            v = delimiter.join(v)
-        rd[f] = v
-    return rd
-
-
-def configure_logging(module=None):
-
-    if module:
-        format = (
-            "BILLY:%(pathname)s %(asctime)s %(name)s %(levelname)s "
-            + module + " %(funcName)s %(lineno)d %(message)s")
-    else:
-        format = (
-            'BILLY2:'
-            '%(pathname)s '
-            ' %(asctime)s %(name)s'
-            ' %(levelname)s'
-            ' %(funcName)s'
-            ' %(lineno)d'
-            ' %(message)s')
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format=format, datefmt="%H:%M:%S")
-
-

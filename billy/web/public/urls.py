@@ -19,15 +19,17 @@ urlpatterns = patterns(
 
     # votes & news
     url(r'^(?P<abbr>[a-z-]+)/(?P<collection_name>[\w-]+)/(?P<_id>[\w-]+)/'
-        '(?P<slug>[^/]+)/news/$',
+        r'(?P<slug>[^/]+)/news/$',
         NewsList.as_view(), name='news_list'),
     url(r'^(?P<abbr>[a-z-]+)/(?P<collection_name>[\w-]+)/(?P<_id>[\w-]+)/'
-        '(?P<slug>[^/]+)/news/rss/$',
+        r'(?P<slug>[^/]+)/news/rss/$',
         NewsListFeed(), name='news_list_rss'),
     url(r'^(?P<abbr>[a-z-]+)/(?P<collection_name>[\w-]+)'
-        '/(?P<_id>[\w-]+)/votes/$', VotesList.as_view(), name='votes_list'),
+        r'/(?P<_id>[\w-]+)/votes/$',
+        VotesList.as_view(),
+        name='votes_list'),
     url(r'^(?P<abbr>[a-z-]+)/(?P<collection_name>[\w-]+)/(?P<_id>[\w-]+)/'
-        'votes/rss/$',
+        r'votes/rss/$',
         VotesListFeed(), name='votes_list_rss'),
 
 )
@@ -71,8 +73,8 @@ urlpatterns += patterns(
     url(r'^(?P<abbr>[a-z-]+)/events/rss/$', EventsFeed(),
         name='events_rss'),
     url(r'^(?P<abbr>[a-z-]+)/events/json_for_date/'
-        '(?P<year>\d+)/(?P<month>\d+)/',
-        'events_json_for_date', name='events_json_for_date'),
+        r'(?P<year>\d+)/(?P<month>\d+)/',
+        r'events_json_for_date', name='events_json_for_date'),
     url(r'^(?P<abbr>[a-z-]+)/events/(?P<event_id>[\w-]+)/', 'event',
         name='event'),
     url(r'^(?P<abbr>[a-z-]+)/ical/(?P<event_id>[\w-]+)/', 'event_ical',

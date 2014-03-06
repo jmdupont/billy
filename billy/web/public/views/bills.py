@@ -62,7 +62,7 @@ class RelatedBillsList(RelatedObjectsList):
             long_description = []
             chamber = form.data.get('chamber')
             session = form.data.get('session')
-            type = form.data.get('type')
+            _type = form.data.get('type')
             status = form.data.getlist('status')
             subjects = form.data.getlist('subjects')
             sponsor = form.data.get('sponsor__leg_id')
@@ -72,7 +72,7 @@ class RelatedBillsList(RelatedObjectsList):
                                        )
                 else:
                     description.extend([chamber.title(), 'Chamber'])
-            description.append((type or 'Bill') + 's')
+            description.append((_type or 'Bill') + 's')
             if session:
                 description.append(
                     '(%s)' %
@@ -245,6 +245,7 @@ class AllBillCSVList(AllBillList):
     Teamplates:
        - None, creates a csv.
     '''
+
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(*args, **kwargs)
         p = context['object_list']
@@ -274,8 +275,8 @@ class AllBillCSVList(AllBillList):
 
             yield ",".join((x for x in fields))
 
-            for bill in context['object_list']:
-                entries = [bill[x] for x in [
+            for _bill in context['object_list']:
+                entries = [_bill[x] for x in [
                     "title",
                     "state",
                     "session",
@@ -284,8 +285,8 @@ class AllBillCSVList(AllBillList):
                 ]]
 
                 entries.append("; ".join([x['name']
-                               for x in bill['sponsors']]))
-                dates = sorted(bill['actions'], key=lambda x: x['date'])
+                               for x in _bill['sponsors']]))
+                dates = sorted(_bill['actions'], key=lambda x: x['date'])
                 fmt = "%Y-%m-%d"
                 entries.append(dates[0]['date'].strftime(fmt))
                 entries.append(dates[-1]['date'].strftime(fmt))
@@ -297,7 +298,7 @@ class AllBillCSVList(AllBillList):
 
                 lower_passages = filter(lp, dates)
                 upper_passages = filter(up, dates)
-                url = bill.get_absolute_url()
+                url = _bill.get_absolute_url()
 
                 [entries.append(x[-1]['date'].strftime(fmt) if x else "") for
                  x in [lower_passages, upper_passages]]
@@ -339,14 +340,14 @@ class BillFeed(BillList):
 
 
 def bill_noslug(request, abbr, bill_id):
-    bill = db.bills.find_one({'_all_ids': bill_id})
-    if bill is None:
+    _bill = db.bills.find_one({'_all_ids': bill_id})
+    if _bill is None:
         raise Http404("No such bill (%s)" % (bill_id))
 
     return redirect('bill',
                     abbr=abbr,
-                    session=bill['session'],
-                    bill_id=bill['bill_id'])
+                    session=_bill['session'],
+                    bill_id=_bill['bill_id'])
 
 
 @ensure_csrf_cookie
@@ -375,38 +376,39 @@ def bill(request, abbr, session, bill_id):
                         abbr=abbr,
                         session=session,
                         bill_id=fixed_bill_id.replace(' ', ''))
-    bill = db.bills.find_one({settings.LEVEL_FIELD: abbr, 'session': session,
+    _bill = db.bills.find_one({settings.LEVEL_FIELD: abbr, 'session': session,
                               'bill_id': fixed_bill_id})
-    if bill is None:
+    if _bill is None:
         raise Http404(
             u'no bill found {0} {1} {2}'.format(abbr, session, bill_id))
 
     events = db.events.find({
         settings.LEVEL_FIELD: abbr,
-        "related_bills.bill_id": bill['_id']
+        "related_bills.bill_id": _bill['_id']
     }).sort("when", -1)
     events = list(events)
     if len(events) > EVENT_PAGE_COUNT:
         events = events[:EVENT_PAGE_COUNT]
 
-    popularity.counter.inc('bills', bill['_id'], abbr=abbr, session=session)
+    popularity.counter.inc('bills',
+                           _bill['_id'], abbr=abbr, session=session)
 
     show_all_sponsors = request.GET.get('show_all_sponsors')
     if show_all_sponsors:
-        sponsors = bill.sponsors_manager
+        sponsors = _bill.sponsors_manager
     else:
-        sponsors = bill.sponsors_manager.first_fifteen
+        sponsors = _bill.sponsors_manager.first_fifteen
 
     return render(
         request, templatename('bill'),
         dict(vote_preview_row_template=templatename('vote_preview_row'),
              abbr=abbr,
              metadata=Metadata.get_object(abbr),
-             bill=bill,
+             bill=_bill,
              events=events,
              show_all_sponsors=show_all_sponsors,
              sponsors=sponsors,
-             sources=bill['sources'],
+             sources=_bill['sources'],
              nav_active='bills'))
 
 
@@ -422,15 +424,15 @@ def vote(request, abbr, vote_id):
     Templates:
         - vote.html
     '''
-    vote = db.votes.find_one(vote_id)
-    if vote is None:
+    _vote = db.votes.find_one(vote_id)
+    if _vote is None:
         raise Http404('no such vote: {0}'.format(vote_id))
-    bill = vote.bill()
+    _bill = _vote.bill()
 
     return render(request, templatename('vote'),
                   dict(abbr=abbr, metadata=Metadata.get_object(abbr),
-                       bill=bill,
-                       vote=vote,
+                       bill=_bill,
+                       vote=_vote,
                        nav_active='bills'))
 
 
@@ -454,33 +456,39 @@ def document(request, abbr, session, bill_id, doc_id):
         return redirect('document', abbr=abbr, session=session,
                         bill_id=fixed_bill_id.replace(' ', ''), doc_id=doc_id)
 
-    bill = db.bills.find_one({settings.LEVEL_FIELD: abbr, 'session': session,
+    _bill = db.bills.find_one({settings.LEVEL_FIELD: abbr, 'session': session,
                               'bill_id': fixed_bill_id})
 
-    if not bill:
+    if not _bill:
         raise Http404('No such bill.')
 
-    for version in bill['versions']:
+    version = None
+    for version in _bill['versions']:
         if version['doc_id'] == doc_id:
             break
     else:
         raise Http404('No such document.')
 
     if not settings.ENABLE_DOCUMENT_VIEW.get(abbr, False):
-        return redirect(version['url'])
+        if version:
+            return redirect(version['url'])
+        else:
+            raise Http404('No such document.')
 
     return render(request, templatename('document'),
-                  dict(abbr=abbr, session=session, bill=bill, version=version,
+                  dict(abbr=abbr, session=session, bill=_bill, version=version,
                        metadata=bill.metadata, nav_active='bills'))
 
 
 def bill_by_mongoid(request, id_):
-    bill = db.bills.find_one(id_)
-    return redirect(bill.get_absolute_url())
+    # TODO : request is not used
+    _bill = db.bills.find_one(id_)
+    return redirect(_bill.get_absolute_url())
 
 
 def show_all(key):
     '''
+    TODO:key is not used
     Context:
         - abbr
         - metadata
@@ -499,15 +507,17 @@ def show_all(key):
         if fixed_bill_id.replace(' ', '') != bill_id:
             return redirect('bill', abbr=abbr, session=session,
                             bill_id=fixed_bill_id.replace(' ', ''))
-        bill = db.bills.find_one({settings.LEVEL_FIELD: abbr,
+        _bill = db.bills.find_one({settings.LEVEL_FIELD: abbr,
                                   'session': session,
                                   'bill_id': fixed_bill_id})
-        if bill is None:
+        if _bill is None:
             raise Http404('no bill found {0} {1} {2}'.format(abbr, session,
                                                              bill_id))
         return render(request, templatename('bill_all_%s' % key),
-                      dict(abbr=abbr, metadata=Metadata.get_object(abbr),
-                           bill=bill, sources=bill['sources'],
+                      dict(abbr=abbr,
+                           metadata=Metadata.get_object(abbr),
+                           bill=_bill,
+                           sources=_bill['sources'],
                            nav_active='bills'))
     return func
 

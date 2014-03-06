@@ -19,13 +19,13 @@ filters = settings.EVENT_FILTERS
 
 def _insert_with_id(event):
     abbr = event[settings.LEVEL_FIELD]
-    id = next_big_id(abbr, 'E', 'event_ids')
-    logger.info("Saving as %s" % id)
+    _id = next_big_id(abbr, 'E', 'event_ids')
+    logger.info("Saving as %s" % _id)
 
-    event['_id'] = id
+    event['_id'] = _id
     db.events.save(event, safe=True)
 
-    return id
+    return _id
 
 
 def import_events(abbr, data_dir, import_actions=False):
@@ -56,13 +56,13 @@ def import_events(abbr, data_dir, import_actions=False):
         }
 
         for entity in data['participants']:
-            type = entity['participant_type']
-            id = None
-            if type in resolvers:
-                id = resolvers[type](entity)
+            _type = entity['participant_type']
+            _id = None
+            if _type in resolvers:
+                _id = resolvers[_type](entity)
             else:
-                logger.warning("I don't know how to resolve a %s" % type)
-            entity['id'] = id
+                logger.warning("I don't know how to resolve a %s" % _type)
+            entity['id'] = _id
 
         for bill in data['related_bills']:
             bill_id = bill['bill_id']

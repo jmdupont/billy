@@ -20,8 +20,8 @@ from .utils import templatename
 
 
 def event_ical(request, abbr, event_id):
-    event = db.events.find_one({'_id': event_id})
-    if event is None:
+    _event = db.events.find_one({'_id': event_id})
+    if _event is None:
         raise Http404
 
     x_name = "X-BILLY"
@@ -31,22 +31,22 @@ def event_ical(request, abbr, event_id):
     cal.add('version', billy.__version__)
 
     cal_event = Event()
-    cal_event.add('summary', event['description'])
-    cal_event['uid'] = "%s@%s" % (event['_id'], get_domain())
+    cal_event.add('summary', _event['description'])
+    cal_event['uid'] = "%s@%s" % (_event['_id'], get_domain())
     cal_event.add('priority', 5)
-    cal_event.add('dtstart', event['when'])
-    cal_event.add('dtend', (event['when'] + datetime.timedelta(hours=1)))
-    cal_event.add('dtstamp', event['updated_at'])
+    cal_event.add('dtstart', _event['when'])
+    cal_event.add('dtend', (_event['when'] + datetime.timedelta(hours=1)))
+    cal_event.add('dtstamp', _event['updated_at'])
 
-    if "participants" in event:
-        for participant in event['participants']:
+    if "participants" in _event:
+        for participant in _event['participants']:
             name = participant['participant']
             cal_event.add('attendee', name)
             if "id" in participant and participant['id']:
                 cal_event.add("%s-ATTENDEE-ID" % (x_name), participant['id'])
 
-    if "related_bills" in event:
-        for bill in event['related_bills']:
+    if "related_bills" in _event:
+        for bill in _event['related_bills']:
             if "bill_id" in bill and bill['bill_id']:
                 cal_event.add("%s-RELATED-BILL-ID" % (x_name), bill['bill_id'])
 
@@ -68,14 +68,14 @@ def event(request, abbr, event_id):
     Templates:
         - billy/web/public/event.html
     '''
-    event = db.events.find_one({'_id': event_id})
-    if event is None:
+    _event = db.events.find_one({'_id': event_id})
+    if _event is None:
         raise Http404
     return render(request, templatename('event'),
                   dict(abbr=abbr,
                        metadata=Metadata.get_object(abbr),
-                       events=[event],
-                       event=event,
+                       events=[_event],
+                       event=_event,
                        event_template=templatename('_event'),
                        events_list_template=templatename('events-pjax'),
                        nav_active='events'))
@@ -103,14 +103,14 @@ def _get_events(abbr, year, month):
     month_end = datetime.datetime(month=next_month, year=year, day=1)
     spec['when'] = {'$gte': month_start, '$lt': month_end}
 
-    events = list(db.events.find(spec))
-    events.sort(key=operator.itemgetter('when'))
-    return events
+    _events = list(db.events.find(spec))
+    _events.sort(key=operator.itemgetter('when'))
+    return _events
 
 
 def events_json_for_date(request, abbr, year, month):
-    events = _get_events(abbr, year, month)
-    content = json.dumps(list(events), cls=JSONEncoderPlus)
+    _events = _get_events(abbr, year, month)
+    content = json.dumps(list(_events), cls=JSONEncoderPlus)
     return HttpResponse(content)
 
 
@@ -128,11 +128,12 @@ def events(request, abbr):
         display_date = datetime.datetime.now()
 
     # Compensate for js dates.
-    events = _get_events(abbr, display_date.year, display_date.month - 1)
+    _events = _get_events(abbr, display_date.year, display_date.month - 1)
     return TemplateResponse(
         request, templatename('events'),
         dict(abbr=abbr, display_date=display_date,
-             metadata=Metadata.get_object(abbr), events=events,
+             metadata=Metadata.get_object(abbr),
+             events=_events,
              event_template=templatename('_event'),
              events_list_template=templatename('events-pjax'),
              nav_active='events'))

@@ -22,12 +22,11 @@ from .utils import templatename
 
 
 class Favorites(dict):
-
     '''This class wraps the favorites dict and provides convenience
     methods.
     '''
 
-    def favorites_exist(self, type_):        
+    def favorites_exist(self, type_):
         if type_ not in self:
             return False
         for obj in self[type_]:
@@ -167,7 +166,7 @@ def is_favorite(obj_id, obj_type, user, extra_spec=None):
 
 
 @login_required
-def f_favorites(request):
+def favorites(request):
     _favorites = get_user_favorites(request.user.username)
     profile = user_db.profiles.find_one(request.user.username)
     return render(request, templatename('user_favorites'),

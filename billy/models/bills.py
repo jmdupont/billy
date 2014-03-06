@@ -542,9 +542,9 @@ class Bill(Document):
 
             # if query is numeric convert to an id filter
             #   (TODO: maybe this should be an $or)
-            if re.findall('\d+', query):
+            if re.findall(r'\d+', query):
                 # if query is entirely numeric make it a regex and hit mongo
-                if not re.findall('\D', query):
+                if not re.findall(r'\D', query):
                     mongo_filter['bill_id'] = {'$regex':
                                                fix_bill_id(query).upper()}
                 else:
