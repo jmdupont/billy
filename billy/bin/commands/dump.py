@@ -65,7 +65,6 @@ def upload(abbr, filename, type, s3_prefix='downloads/', use_cname=True):
 
 
 class APIValidator(validictory.SchemaValidator):
-
     def validate_type_datetime(self, val):
         if not isinstance(val, basestring):
             return False

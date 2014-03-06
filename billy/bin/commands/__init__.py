@@ -11,7 +11,6 @@
 
 
 class CommandMeta(type):
-
     """ register subcommands in a central registry """
 
     def __new__(meta, classname, bases, classdict):
