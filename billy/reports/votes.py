@@ -78,8 +78,11 @@ def scan_votes(abbr):
     # do logging of unnecessary exceptions
     for qe_type, qes in quality_exceptions.iteritems():
         if qes:
-            logger.warning('unnecessary {0} exceptions for {1} votes: \n  {2}'
-                         .format(qe_type, len(qes), '\n  '.join(qes)))
+            logger.warning(
+                'unnecessary {0} exceptions for {1} votes: \n  {2}'
+                .format(qe_type,
+                        len(qes),
+                        '\n  '.join(qes)))
 
     return {'sessions': sessions}
 

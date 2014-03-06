@@ -6,7 +6,7 @@ import urllib
 import datetime
 import urlparse
 import contextlib
-import logging
+#import logging
 
 from bson import ObjectId
 from django.core.exceptions import ImproperlyConfigured

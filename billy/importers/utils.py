@@ -4,18 +4,15 @@ import time
 import json
 import copy
 import datetime
-import traceback
-from bson.son import SON
-import pymongo.errors
+#import traceback
+#from bson.son import SON
+#import pymongo.errors
 import name_tools
 import logging
 _log = logging.getLogger('billy')
-from billy import db
 from billy.conf import settings
-import sys
-
-from billy.core import db, settings
-from billy.importers.names import attempt_committee_match
+#import sys
+#from billy.importers.names import attempt_committee_match
 
 
 def _get_property_dict(schema_obj):
@@ -48,58 +45,58 @@ for _type in ('bill', 'person', 'committee', 'metadata', 'vote',
     standard_fields[_type] = _get_property_dict(schema)
 
 
-def insert_with_id(obj):
-    """
-    Generates a unique ID for the supplied legislator/committee/bill
-    and inserts it into the appropriate collection.
-    """
-    if '_id' in obj:
-        raise ValueError("object already has '_id' field")
+# def insert_with_id(obj):
+#     """
+#     Generates a unique ID for the supplied legislator/committee/bill
+#     and inserts it into the appropriate collection.
+#     """
+#     if '_id' in obj:
+#         raise ValueError("object already has '_id' field")
 
-    # add created_at/updated_at on insert
-    obj['created_at'] = datetime.datetime.utcnow()
-    obj['updated_at'] = obj['created_at']
+#     # add created_at/updated_at on insert
+#     obj['created_at'] = datetime.datetime.utcnow()
+#     obj['updated_at'] = obj['created_at']
 
-    if obj['_type'] == 'person' or obj['_type'] == 'legislator':
-        collection = db.legislators
-        id_type = 'L'
-    elif obj['_type'] == 'committee':
-        collection = db.committees
-        id_type = 'C'
-    elif obj['_type'] == 'bill':
-        collection = db.bills
-        id_type = 'B'
-    else:
-        raise ValueError("unknown _type for object")
+#     if obj['_type'] == 'person' or obj['_type'] == 'legislator':
+#         collection = db.legislators
+#         id_type = 'L'
+#     elif obj['_type'] == 'committee':
+#         collection = db.committees
+#         id_type = 'C'
+#     elif obj['_type'] == 'bill':
+#         collection = db.bills
+#         id_type = 'B'
+#     else:
+#         raise ValueError("unknown _type for object")
 
-    # get abbr
-    abbr = obj[settings.LEVEL_FIELD].upper()
+#     # get abbr
+#     abbr = obj[settings.LEVEL_FIELD].upper()
 
-    id_reg = re.compile(r'^%s%s' % (abbr, id_type))
+#     id_reg = re.compile(r'^%s%s' % (abbr, id_type))
 
-    # Find the next available _id and insert
-    id_prefix = '%s%s' % (abbr, id_type)
-    cursor = collection.find({'_id': id_reg}).sort('_id', -1).limit(1)
+#     # Find the next available _id and insert
+#     id_prefix = '%s%s' % (abbr, id_type)
+#     cursor = collection.find({'_id': id_reg}).sort('_id', -1).limit(1)
 
-    try:
-        new_id = int(cursor.next()['_id'][len(abbr) + 1:]) + 1
-    except StopIteration:
-        new_id = 1
+#     try:
+#         new_id = int(cursor.next()['_id'][len(abbr) + 1:]) + 1
+#     except StopIteration:
+#         new_id = 1
 
-    while True:
-        if obj['_type'] == 'bill':
-            obj['_id'] = '%s%08d' % (id_prefix, new_id)
-        else:
-            obj['_id'] = '%s%06d' % (id_prefix, new_id)
-        obj['_all_ids'] = [obj['_id']]
+#     while True:
+#         if obj['_type'] == 'bill':
+#             obj['_id'] = '%s%08d' % (id_prefix, new_id)
+#         else:
+#             obj['_id'] = '%s%06d' % (id_prefix, new_id)
+#         obj['_all_ids'] = [obj['_id']]
 
-        if obj['_type'] in ['person', 'legislator']:
-            obj['leg_id'] = obj['_id']
+#         if obj['_type'] in ['person', 'legislator']:
+#             obj['leg_id'] = obj['_id']
 
-        try:
-            return collection.insert(obj, safe=True)
-        except pymongo.errors.DuplicateKeyError:
-            new_id += 1
+#         try:
+#             return collection.insert(obj, safe=True)
+#         except pymongo.errors.DuplicateKeyError:
+#             new_id += 1
 
 
 def _timestamp_to_dt(timestamp):
@@ -281,31 +278,31 @@ def prepare_obj(obj):
     return make_plus_fields(obj)
 
 
-def next_big_id(abbr, letter, collection):
-    _log.debug("next_big_id")
+# def next_big_id(abbr, letter, collection):
+#     _log.debug("next_big_id")
 
-    query = SON([('_id', abbr)])
-    update = SON([('$inc', SON([('seq', 1)]))])
+#     query = SON([('_id', abbr)])
+#     update = SON([('$inc', SON([('seq', 1)]))])
 
-    seq = -1
-    try:
-        seq = db.command(
-            SON(
-                [
-                    (
-                        'findandmodify', collection
-                    ),
-                    ('query', query),
-                    ('update', update),
-                    ('new', True),
-                    ('upsert', True)]))['value']['seq']
-    except Exception as e:
-        traceback.print_exc(file=sys.stderr)
-        traceback.print_exc()
-        _log.error("ERROR")
-        _log.debug(e)
+#     seq = -1
+#     try:
+#         seq = db.command(
+#             SON(
+#                 [
+#                     (
+#                         'findandmodify', collection
+#                     ),
+#                     ('query', query),
+#                     ('update', update),
+#                     ('new', True),
+#                     ('upsert', True)]))['value']['seq']
+#     except Exception as e:
+#         traceback.print_exc(file=sys.stderr)
+#         traceback.print_exc()
+#         _log.error("ERROR")
+#         _log.debug(e)
 
-    return "%s%s%08d" % (abbr.upper(), letter, seq)
+#     return "%s%s%08d" % (abbr.upper(), letter, seq)
 
 
 def merge_legislators(leg1, leg2):
@@ -390,66 +387,59 @@ def merge_legislators(leg1, leg2):
 __committee_ids = {}
 
 
-def get_committee_id(abbr, chamber, committee):
+# def get_committee_id(abbr, chamber, committee):
 
-    manual = attempt_committee_match(abbr,
-                                     chamber,
-                                     committee)
+#     manual = attempt_committee_match(abbr,
+#                                      chamber,
+#                                      committee)
 
-    if manual:
-        return manual
+#     if manual:
+#         return manual
 
-    key = (abbr, chamber, committee)
-    if key in __committee_ids:
-        return __committee_ids[key]
+#     key = (abbr, chamber, committee)
+#     if key in __committee_ids:
+#         return __committee_ids[key]
 
-    spec = {settings.LEVEL_FIELD: abbr, 'chamber': chamber,
-            'committee': committee, 'subcommittee': None}
+#     spec = {settings.LEVEL_FIELD: abbr, 'chamber': chamber,
+#             'committee': committee, 'subcommittee': None}
 
-    comms = db.committees.find(spec)
+#     comms = db.committees.find(spec)
 
-    if comms.count() != 1:
-        flag = 'Committee on'
-        if flag not in committee:
-            spec['committee'] = 'Committee on ' + committee
-        else:
-            spec['committee'] = committee.replace(flag, "").strip()
-        comms = db.committees.find(spec)
+#     if comms.count() != 1:
+#         flag = 'Committee on'
+#         if flag not in committee:
+#             spec['committee'] = 'Committee on ' + committee
+#         else:
+#             spec['committee'] = committee.replace(flag, "").strip()
+#         comms = db.committees.find(spec)
 
-    if comms and comms.count() == 1:
-        __committee_ids[key] = comms[0]['_id']
-    else:
-        # last resort :(
-        comm_id = get_committee_id_alt(abbr, committee, chamber)
-        __committee_ids[key] = comm_id
+#     if comms and comms.count() == 1:
+#         __committee_ids[key] = comms[0]['_id']
+#     else:
+#         # last resort :(
+#         comm_id = get_committee_id_alt(abbr, committee, chamber)
+#         __committee_ids[key] = comm_id
 
-    return __committee_ids[key]
-
-
-def get_committee_id_alt(abbr, name, chamber):
-    matched_committee = None
-    spec = {settings.LEVEL_FIELD: abbr, "chamber": chamber}
-    if chamber is None:
-        del(spec['chamber'])
-    comms = db.committees.find(spec)
-    for committee in comms:
-        c = committee['committee']
-        if committee['subcommittee'] is not None:
-            c += " %s" % (committee['subcommittee'])
-
-        if compare_committee(name, c):
-            if not matched_committee is None:
-                return None  # In the event we match more then one committee.
-            matched_committee = committee['_id']
-
-    if matched_committee is None and not chamber is None:
-        matched_committee = get_committee_id_alt(abbr, name, None)
-
-    return matched_committee
+#     return __committee_ids[key]
 
 
-def oysterize(url, doc_class, id, **kwargs):
-    if not kernel:
-        raise oyster_import_exception
-    # kwargs pass through as metadata
-    kernel.track_url(url, doc_class, id=id, **kwargs)
+# def get_committee_id_alt(abbr, name, chamber):
+#     matched_committee = None
+#     spec = {settings.LEVEL_FIELD: abbr, "chamber": chamber}
+#     if chamber is None:
+#         del(spec['chamber'])
+#     comms = db.committees.find(spec)
+#     for committee in comms:
+#         c = committee['committee']
+#         if committee['subcommittee'] is not None:
+#             c += " %s" % (committee['subcommittee'])
+
+#         if compare_committee(name, c):
+#             if not matched_committee is None:
+#                 return None  # In the event we match more then one committee.
+#             matched_committee = committee['_id']
+
+#     if matched_committee is None and not chamber is None:
+#         matched_committee = get_committee_id_alt(abbr, name, None)
+
+#     return matched_committee

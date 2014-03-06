@@ -6,6 +6,7 @@ configure_logging("startup")
 import logging
 _log = logging.getLogger('billy')
 
+import importlib
 #import bson.binary
 #from bson.binary import ALL_UUID_SUBTYPES
 #from bson.binary import OLD_UUID_SUBTYPE
@@ -154,7 +155,6 @@ def _run_scraper(scraper_type, options, metadata):
                                                              'votes'):
             raise ScrapeError("%s scraper didn't save any objects" %
                               scraper_type)
-
 
     scrape['end_time'] = dt.datetime.utcnow()
     runs.append(scrape)
@@ -432,11 +432,6 @@ def main(old_scrape_compat=False):
             check_sessions(metadata, session_list)
 
             _log.debug("Session List %s" % session_list)
-            try:
-                schema_path = os.path.join(os.path.split(__file__)[0],
-                                           '../schemas/metadata.json')
-                schema = json.load(open(schema_path))
-
             try:
                 schema_path = os.path.join(
                     os.path.split(__file__)[0],
